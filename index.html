@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Card Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0b1020; --panel:#ffffff; --line:#e6e9f0; --accent:#4f46e5;
+  --accent2:#9333ea; --muted:#64748b; --text:#0f172a;
+}
+body {
+  font-family:'Inter', system-ui, sans-serif;
+  color:var(--text); line-height:1.55;
+  min-height:100vh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #312e81 0%, transparent 55%),
+    radial-gradient(1000px 500px at 110% 10%, #6d28d9 0%, transparent 50%),
+    linear-gradient(180deg,#0b1020,#0e1530);
+}
+
+.app-header { text-align:center; padding:34px 16px 10px; color:#fff; }
+.app-header h1 {
+  font-family:'Poppins', sans-serif; font-size:2rem; font-weight:700;
+  letter-spacing:-.5px;
+}
+.app-header .accent {
+  background:linear-gradient(90deg,#a5b4fc,#e9d5ff);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.subtitle { opacity:.75; font-size:.95rem; margin-top:6px; }
+
+.layout {
+  display:grid; grid-template-columns: 1fr 1fr; gap:22px;
+  max-width:1120px; margin:26px auto 60px; padding:0 16px;
+}
+.panel {
+  background:var(--panel); border:1px solid rgba(255,255,255,.6);
+  border-radius:18px; padding:24px;
+  box-shadow:0 20px 50px rgba(2,6,23,.35);
+}
+.panel h2 {
+  font-size:.78rem; text-transform:uppercase; letter-spacing:.08em;
+  margin:18px 0 12px; color:var(--muted); font-weight:700;
+}
+.panel h2:first-child { margin-top:0; }
+
+label { display:block; font-size:.8rem; color:#475569; margin-bottom:12px; font-weight:500; }
+input[type=text] {
+  width:100%; margin-top:5px; padding:10px 12px;
+  border:1px solid var(--line); border-radius:10px; font-size:.92rem;
+  background:#f8fafc; transition:.18s;
+}
+input[type=text]:focus {
+  outline:none; border-color:var(--accent); background:#fff;
+  box-shadow:0 0 0 3px rgba(79,70,229,.15);
+}
+
+.file-label {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  border:2px dashed #c7cdf5; border-radius:12px; padding:16px;
+  cursor:pointer; color:var(--accent); font-weight:600; transition:.2s;
+  background:#f5f6ff;
+}
+.file-label:hover { background:#eef0ff; border-color:var(--accent); }
+.file-label input { display:none; }
+.hint { font-size:.74rem; color:#94a3b8; margin-top:8px; }
+.hint.center { text-align:center; margin-top:14px; }
+
+.template-row { display:flex; flex-wrap:wrap; gap:8px; }
+.tpl-btn {
+  flex:1 1 auto; padding:9px 12px; border:1px solid var(--line);
+  background:#fff; border-radius:10px; cursor:pointer; font-size:.84rem;
+  font-weight:600; color:#475569; transition:.15s;
+}
+.tpl-btn:hover { border-color:var(--accent); color:var(--accent); }
+.tpl-btn.active {
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; border-color:transparent;
+}
+
+.color-row { display:flex; gap:18px; }
+.color-row label { display:flex; align-items:center; gap:10px; margin-bottom:0; }
+.color-row input[type=color] {
+  width:44px; height:34px; border:none; border-radius:8px; cursor:pointer;
+  background:none;
+}
+
+.actions { display:flex; gap:12px; margin-top:22px; flex-wrap:wrap; }
+.btn {
+  flex:1 1 auto; padding:12px 16px; border:1px solid var(--line);
+  background:#fff; border-radius:11px; cursor:pointer; font-size:.9rem; font-weight:600;
+  transition:.15s; color:#334155;
+}
+.btn:hover { background:#f8fafc; }
+.btn.primary {
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; border-color:transparent;
+  box-shadow:0 8px 20px rgba(79,70,229,.35);
+}
+.btn.primary:hover { filter:brightness(1.05); }
+.btn.small { flex:0 0 auto; padding:8px 13px; font-size:.8rem; }
+.btn:active { transform:scale(.97); }
+
+/* ===== CARD PREVIEW ===== */
+.card-wrap { display:flex; justify-content:center; padding:14px 0; }
+.card {
+  width:360px; height:206px; border-radius:14px; overflow:hidden;
+  display:flex; flex-direction:row-reverse; padding:20px; gap:16px;
+  box-shadow:0 14px 34px rgba(2,6,23,.28);
+  --primary:#4f46e5; --text:#111827;
+  color:var(--text); background:#fff;
+}
+.card-photo-wrap { flex:0 0 auto; display:flex; align-items:center; }
+.card-photo {
+  width:78px; height:78px; border-radius:50%; object-fit:cover;
+  border:3px solid var(--primary);
+}
+/* circular placeholder shown before an image is uploaded */
+.card-photo-placeholder {
+  width:78px; height:78px; border-radius:50%;
+  border:3px dashed var(--primary);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--primary); font-size:1.8rem; opacity:.55;
+}
+.card-body { flex:1; min-width:0; display:flex; flex-direction:column; }
+.card-name { font-family:'Poppins',sans-serif; font-size:1.2rem; font-weight:700; color:var(--primary); }
+.card-title { font-size:.8rem; font-weight:600; }
+.card-company { font-size:.78rem; opacity:.85; margin-bottom:5px; }
+.card-divider { height:3px; background:var(--primary); width:42px; margin:5px 0; border-radius:3px; }
+.card-contact { font-size:.69rem; display:flex; flex-direction:column; gap:2px; }
+.card-tagline { margin-top:auto; font-size:.66rem; font-style:italic; opacity:.7; }
+
+/* template variants */
+.card.tpl-modern { flex-direction:row-reverse; background:#f8fafc; }
+.card.tpl-dark { background:#0f172a; color:#e2e8f0; }
+.card.tpl-dark .card-company,.card.tpl-dark .card-contact { color:#cbd5e1; }
+.card.tpl-minimal { border:1px solid #e2e8f0; box-shadow:none; }
+.card.tpl-minimal .card-divider { background:#cbd5e1; }
+.card.tpl-gradient { background:linear-gradient(135deg,var(--primary),var(--accent2)); color:#fff; }
+.card.tpl-gradient .card-name { color:#fff; }
+.card.tpl-gradient .card-divider { background:#fff; }
+
+/* ===== CROP MODAL ===== */
+.modal {
+  position:fixed; inset:0; background:rgba(2,6,23,.78);
+  display:none; align-items:center; justify-content:center; padding:16px; z-index:50;
+  backdrop-filter:blur(3px);
+}
+.modal.open { display:flex; }
+.modal-box {
+  background:#fff; border-radius:18px; padding:22px; width:100%; max-width:480px;
+  box-shadow:0 30px 60px rgba(0,0,0,.5);
+}
+.modal-box h3 { font-family:'Poppins',sans-serif; margin-bottom:14px; }
+.crop-area { width:100%; height:300px; background:#0b1020; border-radius:12px; overflow:hidden; }
+.crop-area img { max-width:100%; display:block; }
+.crop-tools { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+.crop-actions { display:flex; gap:12px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 860px) {
+  .layout { grid-template-columns:1fr; }
+  .preview-panel { order:-1; }
+  .card { width:100%; max-width:360px; }
+}
+@media (max-width: 420px) {
+  .app-header h1 { font-size:1.55rem; }
+  .card { height:auto; min-height:196px; }
+  .crop-area { height:240px; }
+}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <h1>🎨 Business Card <span class="accent">Maker</span></h1>
+  <p class="subtitle">Design a professional card — works great on every device</p>
+</header>
+
+<main class="layout">
+  <!-- ============ FORM PANEL ============ -->
+  <section class="panel form-panel">
+    <h2>Card Details</h2>
+
+    <label>Name <input type="text" id="f-name" value="Raj Sharma" placeholder="Your name"></label>
+    <label>Designation <input type="text" id="f-title" value="Founder & CEO" placeholder="e.g. Manager"></label>
+    <label>Company <input type="text" id="f-company" value="Sharma Enterprises" placeholder="Company name"></label>
+    <label>Phone <input type="text" id="f-phone" value="+91 98765 43210" placeholder="Phone number"></label>
+    <label>Email <input type="text" id="f-email" value="raj@sharma.com" placeholder="Email"></label>
+    <label>Website <input type="text" id="f-website" value="www.sharma.com" placeholder="Website"></label>
+    <label>Address <input type="text" id="f-address" value="MG Road, New Delhi" placeholder="Address"></label>
+    <label>Tagline <input type="text" id="f-tagline" value="Quality You Can Trust" placeholder="A short slogan"></label>
+
+    <h2>Photo / Logo</h2>
+    <label class="file-label">
+      <span>📷 Choose an image</span>
+      <input type="file" id="f-photo" accept="image/*">
+    </label>
+    <p class="hint">After choosing an image you can crop and rotate it.</p>
+
+    <h2>Template</h2>
+    <div class="template-row" id="template-row">
+      <button class="tpl-btn active" data-tpl="classic">Classic</button>
+      <button class="tpl-btn" data-tpl="modern">Modern</button>
+      <button class="tpl-btn" data-tpl="dark">Dark</button>
+      <button class="tpl-btn" data-tpl="minimal">Minimal</button>
+      <button class="tpl-btn" data-tpl="gradient">Gradient</button>
+    </div>
+
+    <h2>Colors</h2>
+    <div class="color-row">
+      <label>Primary <input type="color" id="c-primary" value="#4f46e5"></label>
+      <label>Text <input type="color" id="c-text" value="#111827"></label>
+    </div>
+
+    <div class="actions">
+      <button id="btn-pdf" class="btn primary">⬇️ Download PDF (HD)</button>
+      <button id="btn-png" class="btn">⬇️ Download PNG</button>
+    </div>
+  </section>
+
+  <!-- ============ PREVIEW PANEL ============ -->
+  <section class="panel preview-panel">
+    <h2>Live Preview</h2>
+    <div class="card-wrap">
+      <div id="card" class="card tpl-classic">
+        <div class="card-photo-wrap">
+          <div id="card-photo-placeholder" class="card-photo-placeholder">👤</div>
+          <img id="card-photo" class="card-photo" alt="" hidden>
+        </div>
+        <div class="card-body">
+          <div class="card-name" id="o-name">Raj Sharma</div>
+          <div class="card-title" id="o-title">Founder & CEO</div>
+          <div class="card-company" id="o-company">Sharma Enterprises</div>
+          <div class="card-divider"></div>
+          <div class="card-contact">
+            <div id="o-phone">📞 +91 98765 43210</div>
+            <div id="o-email">✉️ raj@sharma.com</div>
+            <div id="o-website">🌐 www.sharma.com</div>
+            <div id="o-address">📍 MG Road, New Delhi</div>
+          </div>
+          <div class="card-tagline" id="o-tagline">Quality You Can Trust</div>
+        </div>
+      </div>
+    </div>
+    <p class="hint center">Exports at print quality (300+ DPI) — no pixelation.</p>
+  </section>
+</main>
+
+<!-- ============ CROP MODAL ============ -->
+<div id="crop-modal" class="modal">
+  <div class="modal-box">
+    <h3>Edit Image</h3>
+    <div class="crop-area">
+      <img id="crop-image" alt="">
+    </div>
+    <div class="crop-tools">
+      <button class="btn small" data-act="rot-left">↺ Rotate Left</button>
+      <button class="btn small" data-act="rot-right">↻ Rotate Right</button>
+      <button class="btn small" data-act="zoom-in">➕ Zoom In</button>
+      <button class="btn small" data-act="zoom-out">➖ Zoom Out</button>
+      <button class="btn small" data-act="reset">Reset</button>
+    </div>
+    <div class="crop-actions">
+      <button id="crop-cancel" class="btn">Cancel</button>
+      <button id="crop-apply" class="btn primary">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Live preview bindings ----------
+  const map = {
+    'f-name':   { out:'o-name',    prefix:'' },
+    'f-title':  { out:'o-title',   prefix:'' },
+    'f-company':{ out:'o-company', prefix:'' },
+    'f-phone':  { out:'o-phone',   prefix:'\uD83D\uDCDE ' },
+    'f-email':  { out:'o-email',   prefix:'\u2709\uFE0F ' },
+    'f-website':{ out:'o-website', prefix:'\uD83C\uDF10 ' },
+    'f-address':{ out:'o-address', prefix:'\uD83D\uDCCD ' },
+    'f-tagline':{ out:'o-tagline', prefix:'' }
+  };
+  Object.keys(map).forEach(function (id) {
+    const input = document.getElementById(id);
+    input.addEventListener('input', function () {
+      const o = map[id];
+      const el = document.getElementById(o.out);
+      el.textContent = input.value ? o.prefix + input.value : '';
+    });
+  });
+
+  // ---------- Templates ----------
+  const card = document.getElementById('card');
+  document.getElementById('template-row').addEventListener('click', function (e) {
+    const btn = e.target.closest('.tpl-btn');
+    if (!btn) return;
+    document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    card.className = 'card tpl-' + btn.dataset.tpl;
+  });
+
+  // ---------- Colors ----------
+  document.getElementById('c-primary').addEventListener('input', function () {
+    card.style.setProperty('--primary', this.value);
+  });
+  document.getElementById('c-text').addEventListener('input', function () {
+    card.style.setProperty('--text', this.value);
+  });
+
+  // ---------- Image upload + Cropper ----------
+  const photoInput = document.getElementById('f-photo');
+  const cropModal  = document.getElementById('crop-modal');
+  const cropImage  = document.getElementById('crop-image');
+  const cardPhoto  = document.getElementById('card-photo');
+  let cropper = null;
+  let photoDataUrl = null; // cropped photo kept for sharp PDF export
+
+  photoInput.addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      cropImage.src = ev.target.result;
+      openCrop();
+    };
+    reader.readAsDataURL(file);
+    photoInput.value = '';
+  });
+
+  function openCrop() {
+    cropModal.classList.add('open');
+    if (cropper) cropper.destroy();
+    cropper = new Cropper(cropImage, {
+      aspectRatio: 1,
+      viewMode: 1,
+      autoCropArea: 1
+    });
+  }
+
+  function closeCrop() {
+    cropModal.classList.remove('open');
+    if (cropper) { cropper.destroy(); cropper = null; }
+  }
+
+  document.querySelector('.crop-tools').addEventListener('click', function (e) {
+    const btn = e.target.closest('button');
+    if (!btn || !cropper) return;
+    switch (btn.dataset.act) {
+      case 'rot-left':  cropper.rotate(-90); break;
+      case 'rot-right': cropper.rotate(90); break;
+      case 'zoom-in':   cropper.zoom(0.1); break;
+      case 'zoom-out':  cropper.zoom(-0.1); break;
+      case 'reset':     cropper.reset(); break;
+    }
+  });
+
+  document.getElementById('crop-cancel').addEventListener('click', closeCrop);
+  document.getElementById('crop-apply').addEventListener('click', function () {
+    if (!cropper) return;
+    // High-resolution output so the photo stays sharp in PDF
+    const canvas = cropper.getCroppedCanvas({
+      width: 512, height: 512,
+      imageSmoothingEnabled: true, imageSmoothingQuality: 'high'
+    });
+    photoDataUrl = canvas.toDataURL('image/png');
+    cardPhoto.src = photoDataUrl;
+    cardPhoto.hidden = false;
+    var ph = document.getElementById('card-photo-placeholder');
+    if (ph) ph.style.display = 'none';
+    closeCrop();
+  });
+
+  // close modal when clicking the dark backdrop
+  cropModal.addEventListener('click', function (e) {
+    if (e.target === cropModal) closeCrop();
+  });
+
+  // ---------- High quality render ----------
+  function renderCanvas() {
+    return html2canvas(card, {
+      scale: 4,                 // 4x for crisp, print-quality output
+      useCORS: true,
+      backgroundColor: null,
+      logging: false
+    });
+  }
+
+  // ---------- helpers ----------
+  function val(id) { return (document.getElementById(id).value || '').trim(); }
+  function hexToRgb(hex) {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+    return m ? [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)] : [17,24,39];
+  }
+  function activeTpl() {
+    const b = document.querySelector('.tpl-btn.active');
+    return b ? b.dataset.tpl : 'classic';
+  }
+
+  // ---------- PDF download (VECTOR text = never pixelates) ----------
+  // Text and shapes are drawn natively by jsPDF (true vector), so they stay
+  // perfectly sharp at any zoom or print size. Only the photo is a raster
+  // image, and it is high resolution (512x512).
+  document.getElementById('btn-pdf').addEventListener('click', function () {
+    const { jsPDF } = window.jspdf;
+    // Standard business card: 3.5in x 2in => 89mm x 51mm
+    const W = 89, H = 51;
+    const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[W, H] });
+
+    const tpl = activeTpl();
+    const primary = hexToRgb(val('c-primary'));
+    let textRgb = hexToRgb(val('c-text'));
+    let bg = [255,255,255];
+    let photoOnRight = true;
+
+    if (tpl === 'dark')     { bg = [15,23,42];  textRgb = [226,232,240]; }
+    if (tpl === 'minimal')  { bg = [255,255,255]; }
+    if (tpl === 'modern')   { bg = [248,250,252]; }
+    let gradient = (tpl === 'gradient');
+
+    // Background
+    if (gradient) { pdf.setFillColor(primary[0],primary[1],primary[2]); textRgb = [255,255,255]; }
+    else { pdf.setFillColor(bg[0],bg[1],bg[2]); }
+    pdf.rect(0, 0, W, H, 'F');
+
+    // Photo (right side), high-res raster
+    const photoSize = 22, margin = 7;
+    let textX = margin;
+    if (photoDataUrl) {
+      const px = W - margin - photoSize;
+      const py = (H - photoSize) / 2;
+      pdf.addImage(photoDataUrl, 'PNG', px, py, photoSize, photoSize, undefined, 'SLOW');
+    }
+
+    // Name
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    if (gradient) pdf.setTextColor(255,255,255);
+    else pdf.setTextColor(primary[0],primary[1],primary[2]);
+    let y = margin + 4;
+    pdf.text(val('f-name') || ' ', textX, y);
+
+    // Designation
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(textRgb[0],textRgb[1],textRgb[2]);
+    y += 4.5; pdf.text(val('f-title') || ' ', textX, y);
+
+    // Company
+    pdf.setFontSize(7.5);
+    y += 4; pdf.text(val('f-company') || ' ', textX, y);
+
+    // Divider line (vector)
+    y += 2.5;
+    pdf.setDrawColor(primary[0],primary[1],primary[2]);
+    pdf.setLineWidth(0.6);
+    pdf.line(textX, y, textX + 12, y);
+
+    // Contact lines
+    pdf.setFontSize(6.8);
+    pdf.setTextColor(textRgb[0],textRgb[1],textRgb[2]);
+    const lines = [
+      val('f-phone')   ? 'Phone: '  + val('f-phone')   : '',
+      val('f-email')   ? 'Email: '  + val('f-email')   : '',
+      val('f-website') ? 'Web: '    + val('f-website') : '',
+      val('f-address') ? 'Address: '+ val('f-address') : ''
+    ].filter(Boolean);
+    y += 4;
+    lines.forEach(function (ln) { pdf.text(ln, textX, y); y += 3.4; });
+
+    // Tagline
+    if (val('f-tagline')) {
+      pdf.setFont('helvetica', 'italic');
+      pdf.setFontSize(6.5);
+      pdf.text(val('f-tagline'), textX, H - margin);
+    }
+
+    pdf.save('business-card.pdf');
+  });
+
+  // ---------- PNG download (high resolution) ----------
+  document.getElementById('btn-png').addEventListener('click', function () {
+    renderCanvas().then(function (canvas) {
+      const link = document.createElement('a');
+      link.download = 'business-card.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+    });
+  });
+})();
+</script>
+</body>
+</html>
