@@ -127,8 +127,60 @@
   });
 
   // ---------- High quality render ----------
-  function renderCanvas() {
-    return html2canvas(card, { scale: 4, useCORS: true, backgroundColor: null, logging: false });
+  // Render the card to a crisp, high-resolution canvas. The card is briefly
+  // allowed to grow to its full natural height (and clipping is disabled) so
+  // nothing — like the bottom tagline — gets cut off in the download.
+  function exportCanvas() {
+    var prev = {
+      height: card.style.height,
+      minHeight: card.style.minHeight,
+      overflow: card.style.overflow
+    };
+    card.style.height = 'auto';
+    card.style.overflow = 'visible';
+
+    function restore() {
+      card.style.height = prev.height;
+      card.style.minHeight = prev.minHeight;
+      card.style.overflow = prev.overflow;
+    }
+
+    return html2canvas(card, {
+      scale: 4,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    }).then(function (canvas) {
+      restore();
+      return canvas;
+    }, function (err) {
+      restore();
+      throw err;
+    });
+  }
+
+  // Reliable download that works on desktop and mobile (uses a Blob object
+  // URL instead of a huge data URI, which mobile browsers often refuse).
+  function downloadCanvas(canvas, filename) {
+    if (canvas.toBlob) {
+      canvas.toBlob(function (blob) {
+        var url = URL.createObjectURL(blob);
+        triggerDownload(url, filename);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      }, 'image/png', 1.0);
+    } else {
+      triggerDownload(canvas.toDataURL('image/png', 1.0), filename);
+    }
+  }
+
+  function triggerDownload(href, filename) {
+    var link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   // ---------- PDF download (pixel-perfect, identical to the PNG) ----------
@@ -138,7 +190,7 @@
   // contact icons (phone, email, website, location) are all preserved.
   document.getElementById('btn-pdf').addEventListener('click', function () {
     var jsPDF = window.jspdf.jsPDF;
-    renderCanvas().then(function (canvas) {
+    exportCanvas().then(function (canvas) {
       var imgData = canvas.toDataURL('image/png', 1.0);
       var pdfW = 89; // standard business-card width in mm
       var pdfH = pdfW * canvas.height / canvas.width; // keep the true aspect ratio
@@ -149,16 +201,17 @@
       });
       pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH, undefined, 'FAST');
       pdf.save('business-card.pdf');
+    }).catch(function () {
+      alert('Could not generate the PDF. Please try again.');
     });
   });
 
   // ---------- PNG download (high resolution) ----------
   document.getElementById('btn-png').addEventListener('click', function () {
-    renderCanvas().then(function (canvas) {
-      var link = document.createElement('a');
-      link.download = 'business-card.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
+    exportCanvas().then(function (canvas) {
+      downloadCanvas(canvas, 'business-card.png');
+    }).catch(function () {
+      alert('Could not generate the PNG. Please try again.');
     });
   });
 })();
