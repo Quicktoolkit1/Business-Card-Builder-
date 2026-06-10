@@ -126,92 +126,161 @@
     if (e.target === cropModal) closeCrop();
   });
 
-  // ---------- High quality render ----------
-  // Render the card to a crisp, high-resolution canvas. The card is briefly
-  // allowed to grow to its full natural height (and clipping is disabled) so
-  // nothing — like the bottom tagline — gets cut off in the download.
-  function exportCanvas() {
-    var prev = {
-      height: card.style.height,
-      minHeight: card.style.minHeight,
-      overflow: card.style.overflow
-    };
-    card.style.height = 'auto';
-    card.style.overflow = 'visible';
+  // ---------- helpers ----------
+  function val(id) { return (document.getElementById(id).value || '').trim(); }
+  function hexToRgb(hex) {
+    var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+    return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [17, 24, 39];
+  }
+  function activeTpl() {
+    var b = document.querySelector('.tpl-btn.active');
+    return b ? b.dataset.tpl : 'classic';
+  }
 
-    function restore() {
-      card.style.height = prev.height;
-      card.style.minHeight = prev.minHeight;
-      card.style.overflow = prev.overflow;
-    }
+  // Render an emoji to a small transparent PNG so it can sit next to the
+  // (selectable, copyable) vector text as an icon in the PDF.
+  function emojiDataUrl(emoji) {
+    var c = document.createElement('canvas');
+    c.width = c.height = 72;
+    var ctx = c.getContext('2d');
+    ctx.font = '56px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, 36, 40);
+    return c.toDataURL('image/png');
+  }
 
-    return html2canvas(card, {
-      scale: 4,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false
-    }).then(function (canvas) {
-      restore();
-      return canvas;
-    }, function (err) {
-      restore();
-      throw err;
+  // Clip the uploaded square photo into a circle with a coloured ring,
+  // matching the on-screen preview.
+  function makeCircularPhoto(dataUrl, ringHex) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () {
+        var s = 512, c = document.createElement('canvas');
+        c.width = c.height = s;
+        var ctx = c.getContext('2d');
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, s / 2 - 16, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, 0, 0, s, s);
+        ctx.restore();
+        ctx.lineWidth = 24;
+        ctx.strokeStyle = ringHex || '#4f46e5';
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, s / 2 - 13, 0, Math.PI * 2);
+        ctx.stroke();
+        resolve(c.toDataURL('image/png'));
+      };
+      img.onerror = function () { resolve(null); };
+      img.src = dataUrl;
     });
   }
 
-  // Reliable download that works on desktop and mobile (uses a Blob object
-  // URL instead of a huge data URI, which mobile browsers often refuse).
-  function downloadCanvas(canvas, filename) {
-    if (canvas.toBlob) {
-      canvas.toBlob(function (blob) {
-        var url = URL.createObjectURL(blob);
-        triggerDownload(url, filename);
-        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-      }, 'image/png', 1.0);
-    } else {
-      triggerDownload(canvas.toDataURL('image/png', 1.0), filename);
-    }
-  }
-
-  function triggerDownload(href, filename) {
-    var link = document.createElement('a');
-    link.href = href;
-    link.download = filename;
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  // ---------- PDF download (pixel-perfect, identical to the PNG) ----------
-  // The live card is rendered to a high-resolution canvas (the same way the
-  // PNG export works) and embedded into the PDF. This makes the PDF look
-  // exactly like the preview: the circular photo with its border and the
-  // contact icons (phone, email, website, location) are all preserved.
+  // ---------- PDF download (HD, with SELECTABLE/COPYABLE vector text) ----------
+  // Text (name, details, tagline) is drawn natively by jsPDF so it can be
+  // selected and copied. The photo is a circular image and the contact icons
+  // are tiny emoji images, so the result still looks like the live preview.
   document.getElementById('btn-pdf').addEventListener('click', function () {
     var jsPDF = window.jspdf.jsPDF;
-    exportCanvas().then(function (canvas) {
-      var imgData = canvas.toDataURL('image/png', 1.0);
-      var pdfW = 89; // standard business-card width in mm
-      var pdfH = pdfW * canvas.height / canvas.width; // keep the true aspect ratio
-      var pdf = new jsPDF({
-        orientation: pdfH > pdfW ? 'portrait' : 'landscape',
-        unit: 'mm',
-        format: [pdfW, pdfH]
-      });
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH, undefined, 'FAST');
-      pdf.save('business-card.pdf');
-    }).catch(function () {
-      alert('Could not generate the PDF. Please try again.');
-    });
-  });
+    var W = 89, H = 51, margin = 7;
+    var tpl = activeTpl();
+    var primary = hexToRgb(val('c-primary'));
+    var textRgb = hexToRgb(val('c-text'));
+    var accent2 = [147, 51, 234];
+    var bg = [255, 255, 255];
+    var gradient = (tpl === 'gradient');
+    var ringHex = val('c-primary') || '#4f46e5';
 
-  // ---------- PNG download (high resolution) ----------
-  document.getElementById('btn-png').addEventListener('click', function () {
-    exportCanvas().then(function (canvas) {
-      downloadCanvas(canvas, 'business-card.png');
-    }).catch(function () {
-      alert('Could not generate the PNG. Please try again.');
-    });
+    if (tpl === 'dark')   { bg = [15, 23, 42];  textRgb = [226, 232, 240]; }
+    if (tpl === 'modern') { bg = [248, 250, 252]; }
+
+    function build(circPhoto) {
+      var pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [W, H] });
+
+      // Background
+      if (gradient) {
+        var steps = 64;
+        for (var i = 0; i < steps; i++) {
+          var t = i / (steps - 1);
+          pdf.setFillColor(
+            Math.round(primary[0] + (accent2[0] - primary[0]) * t),
+            Math.round(primary[1] + (accent2[1] - primary[1]) * t),
+            Math.round(primary[2] + (accent2[2] - primary[2]) * t)
+          );
+          pdf.rect(i * W / steps, 0, W / steps + 0.6, H, 'F');
+        }
+        textRgb = [255, 255, 255];
+      } else {
+        pdf.setFillColor(bg[0], bg[1], bg[2]);
+        pdf.rect(0, 0, W, H, 'F');
+      }
+
+      // Circular photo on the right, slightly above centre
+      var photoSize = 24;
+      if (circPhoto) {
+        var px = W - margin - photoSize;
+        var py = (H - photoSize) / 2 - 2.5;
+        pdf.addImage(circPhoto, 'PNG', px, py, photoSize, photoSize, undefined, 'SLOW');
+      }
+
+      var x = margin, y = 14;
+
+      // Name
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(16);
+      pdf.setTextColor(gradient ? 255 : primary[0], gradient ? 255 : primary[1], gradient ? 255 : primary[2]);
+      if (val('f-name')) pdf.text(val('f-name'), x, y);
+
+      // Designation
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(textRgb[0], textRgb[1], textRgb[2]);
+      pdf.setFontSize(9);
+      if (val('f-title')) { y += 5; pdf.text(val('f-title'), x, y); }
+
+      // Company
+      pdf.setFontSize(8);
+      if (val('f-company')) { y += 4.4; pdf.text(val('f-company'), x, y); }
+
+      // Divider
+      y += 2.4;
+      pdf.setDrawColor(gradient ? 255 : primary[0], gradient ? 255 : primary[1], gradient ? 255 : primary[2]);
+      pdf.setLineWidth(0.7);
+      pdf.line(x, y, x + 13, y);
+
+      // Contact rows: emoji icon image + selectable text
+      pdf.setFontSize(8);
+      pdf.setTextColor(textRgb[0], textRgb[1], textRgb[2]);
+      var rows = [
+        { icon: '\uD83D\uDCDE', text: val('f-phone') },
+        { icon: '\u2709\uFE0F', text: val('f-email') },
+        { icon: '\uD83C\uDF10', text: val('f-website') },
+        { icon: '\uD83D\uDCCD', text: val('f-address') }
+      ].filter(function (r) { return r.text; });
+
+      y += 4.2;
+      rows.forEach(function (r) {
+        try { pdf.addImage(emojiDataUrl(r.icon), 'PNG', x, y - 3.1, 3.4, 3.4); } catch (e) {}
+        pdf.text(r.text, x + 4.7, y);
+        y += 4.3;
+      });
+
+      // Tagline
+      if (val('f-tagline')) {
+        pdf.setFont('helvetica', 'italic');
+        pdf.setFontSize(7);
+        pdf.text(val('f-tagline'), x, H - 3.5);
+      }
+
+      pdf.save('business-card.pdf');
+    }
+
+    try {
+      if (photoDataUrl) { makeCircularPhoto(photoDataUrl, ringHex).then(build); }
+      else { build(null); }
+    } catch (e) {
+      alert('Could not generate the PDF. Please try again.');
+    }
   });
 })();
