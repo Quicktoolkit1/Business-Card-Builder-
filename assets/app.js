@@ -131,83 +131,25 @@
     return html2canvas(card, { scale: 4, useCORS: true, backgroundColor: null, logging: false });
   }
 
-  // ---------- helpers ----------
-  function val(id) { return (document.getElementById(id).value || '').trim(); }
-  function hexToRgb(hex) {
-    var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
-    return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [17, 24, 39];
-  }
-  function activeTpl() {
-    var b = document.querySelector('.tpl-btn.active');
-    return b ? b.dataset.tpl : 'classic';
-  }
-
-  // ---------- PDF download (VECTOR text = never pixelates) ----------
+  // ---------- PDF download (pixel-perfect, identical to the PNG) ----------
+  // The live card is rendered to a high-resolution canvas (the same way the
+  // PNG export works) and embedded into the PDF. This makes the PDF look
+  // exactly like the preview: the circular photo with its border and the
+  // contact icons (phone, email, website, location) are all preserved.
   document.getElementById('btn-pdf').addEventListener('click', function () {
     var jsPDF = window.jspdf.jsPDF;
-    var W = 89, H = 51; // standard business card in mm
-    var pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [W, H] });
-
-    var tpl = activeTpl();
-    var primary = hexToRgb(val('c-primary'));
-    var textRgb = hexToRgb(val('c-text'));
-    var bg = [255, 255, 255];
-
-    if (tpl === 'dark')    { bg = [15, 23, 42]; textRgb = [226, 232, 240]; }
-    if (tpl === 'minimal') { bg = [255, 255, 255]; }
-    if (tpl === 'modern')  { bg = [248, 250, 252]; }
-    var gradient = (tpl === 'gradient');
-
-    if (gradient) { pdf.setFillColor(primary[0], primary[1], primary[2]); textRgb = [255, 255, 255]; }
-    else { pdf.setFillColor(bg[0], bg[1], bg[2]); }
-    pdf.rect(0, 0, W, H, 'F');
-
-    var photoSize = 26, margin = 7;
-    var textX = margin;
-    if (photoDataUrl) {
-      var px = W - margin - photoSize;
-      var py = (H - photoSize) / 2 - 3; // slightly above vertical centre
-      pdf.addImage(photoDataUrl, 'PNG', px, py, photoSize, photoSize, undefined, 'SLOW');
-    }
-
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    if (gradient) pdf.setTextColor(255, 255, 255);
-    else pdf.setTextColor(primary[0], primary[1], primary[2]);
-    var y = margin + 4;
-    pdf.text(val('f-name') || ' ', textX, y);
-
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    pdf.setTextColor(textRgb[0], textRgb[1], textRgb[2]);
-    y += 4.5; pdf.text(val('f-title') || ' ', textX, y);
-
-    pdf.setFontSize(7.5);
-    y += 4; pdf.text(val('f-company') || ' ', textX, y);
-
-    y += 2.5;
-    pdf.setDrawColor(primary[0], primary[1], primary[2]);
-    pdf.setLineWidth(0.6);
-    pdf.line(textX, y, textX + 12, y);
-
-    pdf.setFontSize(6.8);
-    pdf.setTextColor(textRgb[0], textRgb[1], textRgb[2]);
-    var lines = [
-      val('f-phone')   ? 'Phone: '   + val('f-phone')   : '',
-      val('f-email')   ? 'Email: '   + val('f-email')   : '',
-      val('f-website') ? 'Web: '     + val('f-website') : '',
-      val('f-address') ? 'Address: ' + val('f-address') : ''
-    ].filter(Boolean);
-    y += 4;
-    lines.forEach(function (ln) { pdf.text(ln, textX, y); y += 3.4; });
-
-    if (val('f-tagline')) {
-      pdf.setFont('helvetica', 'italic');
-      pdf.setFontSize(6.5);
-      pdf.text(val('f-tagline'), textX, H - margin);
-    }
-
-    pdf.save('business-card.pdf');
+    renderCanvas().then(function (canvas) {
+      var imgData = canvas.toDataURL('image/png', 1.0);
+      var pdfW = 89; // standard business-card width in mm
+      var pdfH = pdfW * canvas.height / canvas.width; // keep the true aspect ratio
+      var pdf = new jsPDF({
+        orientation: pdfH > pdfW ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: [pdfW, pdfH]
+      });
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+      pdf.save('business-card.pdf');
+    });
   });
 
   // ---------- PNG download (high resolution) ----------
