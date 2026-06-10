@@ -162,11 +162,11 @@
     else { pdf.setFillColor(bg[0], bg[1], bg[2]); }
     pdf.rect(0, 0, W, H, 'F');
 
-    var photoSize = 22, margin = 7;
+    var photoSize = 26, margin = 7;
     var textX = margin;
     if (photoDataUrl) {
       var px = W - margin - photoSize;
-      var py = (H - photoSize) / 2;
+      var py = (H - photoSize) / 2 - 3; // slightly above vertical centre
       pdf.addImage(photoDataUrl, 'PNG', px, py, photoSize, photoSize, undefined, 'SLOW');
     }
 

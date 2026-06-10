@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
-<link rel="stylesheet" href="assets/style.css?v=2">
+<link rel="stylesheet" href="assets/style.css?v=3">
 
 <!-- Structured data: WebApplication + FAQ -->
 <script type="application/ld+json">
@@ -117,11 +117,11 @@
   box-shadow:0 14px 34px rgba(2,6,23,.28);
   --primary:#4f46e5; --text:#111827; color:var(--text); background:#fff;
 }
-.card-photo-wrap{ flex:0 0 auto; display:flex; align-items:center; }
-.card-photo{ width:78px; height:78px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); }
+.card-photo-wrap{ flex:0 0 auto; display:flex; align-items:flex-start; padding-top:4px; }
+.card-photo{ width:92px; height:92px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); }
 .card-photo-placeholder{
-  width:78px; height:78px; border-radius:50%; border:3px dashed var(--primary);
-  display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:1.8rem; opacity:.55;
+  width:92px; height:92px; border-radius:50%; border:3px dashed var(--primary);
+  display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:2.1rem; opacity:.55;
 }
 .card-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
 .card-name{ font-family:'Poppins',sans-serif; font-size:1.2rem; font-weight:700; color:var(--primary); }
@@ -164,8 +164,8 @@
     width:100%; max-width:100%; height:auto; min-height:188px;
     padding:16px; gap:12px;
   }
-  .card-photo, .card-photo-placeholder{ width:62px; height:62px; }
-  .card-photo-placeholder{ font-size:1.5rem; }
+  .card-photo, .card-photo-placeholder{ width:78px; height:78px; }
+  .card-photo-placeholder{ font-size:1.7rem; }
   .card-name{ font-size:1.05rem; }
   .card-contact{ font-size:.66rem; }
   .crop-area{ height:240px; }
@@ -395,6 +395,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="assets/app.js?v=2" defer></script>
+<script src="assets/app.js?v=3" defer></script>
 </body>
 </html>
