@@ -36,6 +36,10 @@ body{
 a{ color:var(--accent); text-decoration:none; }
 a:hover{ text-decoration:underline; }
 img{ max-width:100%; display:block; }
+/* Author rules override the UA [hidden] rule, so enforce it explicitly.
+   Without this, the hidden card photo <img> renders as an empty bordered
+   circle next to the dashed placeholder (the "two circles" bug). */
+[hidden]{ display:none !important; }
 
 /* ---------- Navigation ---------- */
 .nav{

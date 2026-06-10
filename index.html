@@ -152,13 +152,25 @@
 .crop-actions{ display:flex; gap:12px; }
 
 @media (max-width:860px){
-  .builder{ grid-template-columns:1fr; }
+  .builder{ grid-template-columns:1fr; gap:16px; margin-top:4px; padding:0 12px; }
   .preview-panel{ order:-1; }
-  .card{ width:100%; max-width:360px; }
+  .panel{ padding:18px; }
+  .card{ width:100%; max-width:340px; }
 }
-@media (max-width:420px){
-  .card{ height:auto; min-height:196px; }
+@media (max-width:480px){
+  .builder{ padding:0 10px; }
+  .panel{ padding:16px; border-radius:14px; }
+  .card{
+    width:100%; max-width:100%; height:auto; min-height:188px;
+    padding:16px; gap:12px;
+  }
+  .card-photo, .card-photo-placeholder{ width:62px; height:62px; }
+  .card-photo-placeholder{ font-size:1.5rem; }
+  .card-name{ font-size:1.05rem; }
+  .card-contact{ font-size:.66rem; }
   .crop-area{ height:240px; }
+  .builder .actions{ flex-direction:column; }
+  .builder .actions .btn{ width:100%; }
 }
 </style>
 </head>
@@ -199,11 +211,11 @@
   <!-- FORM PANEL -->
   <div class="panel form-panel">
     <h3 class="group">Card Details</h3>
-    <label class="field">Name <input type="text" id="f-name" value="Raj Sharma" placeholder="Your name"></label>
+    <label class="field">Name <input type="text" id="f-name" value="Abdullah" placeholder="Your name"></label>
     <label class="field">Designation <input type="text" id="f-title" value="Founder &amp; CEO" placeholder="e.g. Manager"></label>
     <label class="field">Company <input type="text" id="f-company" value="Sharma Enterprises" placeholder="Company name"></label>
     <label class="field">Phone <input type="text" id="f-phone" value="+91 98765 43210" placeholder="Phone number"></label>
-    <label class="field">Email <input type="text" id="f-email" value="raj@sharma.com" placeholder="Email"></label>
+    <label class="field">Email <input type="text" id="f-email" value="mohdabdullah46345@gmail.com" placeholder="Email"></label>
     <label class="field">Website <input type="text" id="f-website" value="www.sharma.com" placeholder="Website"></label>
     <label class="field">Address <input type="text" id="f-address" value="MG Road, New Delhi" placeholder="Address"></label>
     <label class="field">Tagline <input type="text" id="f-tagline" value="Quality You Can Trust" placeholder="A short slogan"></label>
@@ -246,13 +258,13 @@
           <img id="card-photo" class="card-photo" alt="Business card photo preview" hidden>
         </div>
         <div class="card-body">
-          <div class="card-name" id="o-name">Raj Sharma</div>
+          <div class="card-name" id="o-name">Abdullah</div>
           <div class="card-title" id="o-title">Founder &amp; CEO</div>
           <div class="card-company" id="o-company">Sharma Enterprises</div>
           <div class="card-divider"></div>
           <div class="card-contact">
             <div id="o-phone">📞 +91 98765 43210</div>
-            <div id="o-email">✉️ raj@sharma.com</div>
+            <div id="o-email">✉️ mohdabdullah46345@gmail.com</div>
             <div id="o-website">🌐 www.sharma.com</div>
             <div id="o-address">📍 MG Road, New Delhi</div>
           </div>
