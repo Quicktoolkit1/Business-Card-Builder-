@@ -3,206 +3,219 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Business Card Maker</title>
+<title>CardCraft — Free Online Business Card Maker (PDF &amp; PNG)</title>
+<meta name="description" content="Create professional business cards online for free. Choose templates, add your photo or logo, pick colors, and download print-ready PDF (300+ DPI) or PNG. No sign-up required.">
+<meta name="keywords" content="business card maker, free business card, business card generator, visiting card maker, online card design, printable business card, PDF business card">
+<meta name="author" content="CardCraft">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://quicktoolkit1.github.io/Business-Card-Builder-/">
+
+<!-- Open Graph / Social -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="CardCraft — Free Online Business Card Maker">
+<meta property="og:description" content="Design and download print-ready business cards in seconds. Free, no sign-up, works on every device.">
+<meta property="og:url" content="https://quicktoolkit1.github.io/Business-Card-Builder-/">
+<meta property="og:site_name" content="CardCraft">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CardCraft — Free Online Business Card Maker">
+<meta name="twitter:description" content="Design and download print-ready business cards in seconds. Free and no sign-up.">
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#4f46e5">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<link rel="stylesheet" href="assets/style.css">
+
+<!-- Structured data: WebApplication + FAQ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "CardCraft Business Card Maker",
+  "url": "https://quicktoolkit1.github.io/Business-Card-Builder-/",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "description": "Free online tool to design and download professional business cards as print-ready PDF or PNG."
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is CardCraft really free?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. CardCraft is completely free to use. You can design and download unlimited business cards without creating an account." } },
+    { "@type": "Question", "name": "Are my photos uploaded to a server?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. All editing happens directly in your browser. Your images and details never leave your device, so your data stays private." } },
+    { "@type": "Question", "name": "What is the print quality?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The PDF export uses real vector text and a standard 89mm x 51mm card size, so it prints crisp at 300+ DPI without pixelation." } }
+  ]
+}
+</script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg:#0b1020; --panel:#ffffff; --line:#e6e9f0; --accent:#4f46e5;
-  --accent2:#9333ea; --muted:#64748b; --text:#0f172a;
+/* ===== Builder-specific styles ===== */
+.builder{
+  display:grid; grid-template-columns:1fr 1fr; gap:22px;
+  max-width:1140px; margin:8px auto 10px; padding:0 18px;
 }
-body {
-  font-family:'Inter', system-ui, sans-serif;
-  color:var(--text); line-height:1.55;
-  min-height:100vh;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #312e81 0%, transparent 55%),
-    radial-gradient(1000px 500px at 110% 10%, #6d28d9 0%, transparent 50%),
-    linear-gradient(180deg,#0b1020,#0e1530);
-}
-
-.app-header { text-align:center; padding:34px 16px 10px; color:#fff; }
-.app-header h1 {
-  font-family:'Poppins', sans-serif; font-size:2rem; font-weight:700;
-  letter-spacing:-.5px;
-}
-.app-header .accent {
-  background:linear-gradient(90deg,#a5b4fc,#e9d5ff);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
-}
-.subtitle { opacity:.75; font-size:.95rem; margin-top:6px; }
-
-.layout {
-  display:grid; grid-template-columns: 1fr 1fr; gap:22px;
-  max-width:1120px; margin:26px auto 60px; padding:0 16px;
-}
-.panel {
+.panel{
   background:var(--panel); border:1px solid rgba(255,255,255,.6);
-  border-radius:18px; padding:24px;
-  box-shadow:0 20px 50px rgba(2,6,23,.35);
+  border-radius:18px; padding:24px; box-shadow:0 20px 50px rgba(2,6,23,.35);
 }
-.panel h2 {
+.panel h3.group{
   font-size:.78rem; text-transform:uppercase; letter-spacing:.08em;
   margin:18px 0 12px; color:var(--muted); font-weight:700;
 }
-.panel h2:first-child { margin-top:0; }
-
-label { display:block; font-size:.8rem; color:#475569; margin-bottom:12px; font-weight:500; }
-input[type=text] {
+.panel h3.group:first-child{ margin-top:0; }
+.field{ display:block; font-size:.8rem; color:#475569; margin-bottom:12px; font-weight:500; }
+.field input[type=text]{
   width:100%; margin-top:5px; padding:10px 12px;
   border:1px solid var(--line); border-radius:10px; font-size:.92rem;
   background:#f8fafc; transition:.18s;
 }
-input[type=text]:focus {
+.field input[type=text]:focus{
   outline:none; border-color:var(--accent); background:#fff;
   box-shadow:0 0 0 3px rgba(79,70,229,.15);
 }
-
-.file-label {
+.file-label{
   display:flex; align-items:center; justify-content:center; gap:8px;
   border:2px dashed #c7cdf5; border-radius:12px; padding:16px;
-  cursor:pointer; color:var(--accent); font-weight:600; transition:.2s;
-  background:#f5f6ff;
+  cursor:pointer; color:var(--accent); font-weight:600; transition:.2s; background:#f5f6ff;
 }
-.file-label:hover { background:#eef0ff; border-color:var(--accent); }
-.file-label input { display:none; }
-.hint { font-size:.74rem; color:#94a3b8; margin-top:8px; }
-.hint.center { text-align:center; margin-top:14px; }
-
-.template-row { display:flex; flex-wrap:wrap; gap:8px; }
-.tpl-btn {
+.file-label:hover{ background:#eef0ff; border-color:var(--accent); }
+.file-label input{ display:none; }
+.hint{ font-size:.74rem; color:#94a3b8; margin-top:8px; }
+.hint.center{ text-align:center; margin-top:14px; color:#94a3b8; }
+.template-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.tpl-btn{
   flex:1 1 auto; padding:9px 12px; border:1px solid var(--line);
   background:#fff; border-radius:10px; cursor:pointer; font-size:.84rem;
   font-weight:600; color:#475569; transition:.15s;
 }
-.tpl-btn:hover { border-color:var(--accent); color:var(--accent); }
-.tpl-btn.active {
+.tpl-btn:hover{ border-color:var(--accent); color:var(--accent); }
+.tpl-btn.active{
   background:linear-gradient(135deg,var(--accent),var(--accent2));
   color:#fff; border-color:transparent;
 }
+.color-row{ display:flex; gap:18px; }
+.color-row label{ display:flex; align-items:center; gap:10px; margin-bottom:0; font-size:.8rem; color:#475569; font-weight:500; }
+.color-row input[type=color]{ width:44px; height:34px; border:none; border-radius:8px; cursor:pointer; background:none; }
+.builder .actions{ display:flex; gap:12px; margin-top:22px; flex-wrap:wrap; }
+.builder .actions .btn{ flex:1 1 auto; }
+.btn.small{ flex:0 0 auto; padding:8px 13px; font-size:.8rem; }
 
-.color-row { display:flex; gap:18px; }
-.color-row label { display:flex; align-items:center; gap:10px; margin-bottom:0; }
-.color-row input[type=color] {
-  width:44px; height:34px; border:none; border-radius:8px; cursor:pointer;
-  background:none;
-}
-
-.actions { display:flex; gap:12px; margin-top:22px; flex-wrap:wrap; }
-.btn {
-  flex:1 1 auto; padding:12px 16px; border:1px solid var(--line);
-  background:#fff; border-radius:11px; cursor:pointer; font-size:.9rem; font-weight:600;
-  transition:.15s; color:#334155;
-}
-.btn:hover { background:#f8fafc; }
-.btn.primary {
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  color:#fff; border-color:transparent;
-  box-shadow:0 8px 20px rgba(79,70,229,.35);
-}
-.btn.primary:hover { filter:brightness(1.05); }
-.btn.small { flex:0 0 auto; padding:8px 13px; font-size:.8rem; }
-.btn:active { transform:scale(.97); }
-
-/* ===== CARD PREVIEW ===== */
-.card-wrap { display:flex; justify-content:center; padding:14px 0; }
-.card {
+.card-wrap{ display:flex; justify-content:center; padding:14px 0; }
+.card{
   width:360px; height:206px; border-radius:14px; overflow:hidden;
   display:flex; flex-direction:row-reverse; padding:20px; gap:16px;
   box-shadow:0 14px 34px rgba(2,6,23,.28);
-  --primary:#4f46e5; --text:#111827;
-  color:var(--text); background:#fff;
+  --primary:#4f46e5; --text:#111827; color:var(--text); background:#fff;
 }
-.card-photo-wrap { flex:0 0 auto; display:flex; align-items:center; }
-.card-photo {
-  width:78px; height:78px; border-radius:50%; object-fit:cover;
-  border:3px solid var(--primary);
+.card-photo-wrap{ flex:0 0 auto; display:flex; align-items:center; }
+.card-photo{ width:78px; height:78px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); }
+.card-photo-placeholder{
+  width:78px; height:78px; border-radius:50%; border:3px dashed var(--primary);
+  display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:1.8rem; opacity:.55;
 }
-/* circular placeholder shown before an image is uploaded */
-.card-photo-placeholder {
-  width:78px; height:78px; border-radius:50%;
-  border:3px dashed var(--primary);
-  display:flex; align-items:center; justify-content:center;
-  color:var(--primary); font-size:1.8rem; opacity:.55;
-}
-.card-body { flex:1; min-width:0; display:flex; flex-direction:column; }
-.card-name { font-family:'Poppins',sans-serif; font-size:1.2rem; font-weight:700; color:var(--primary); }
-.card-title { font-size:.8rem; font-weight:600; }
-.card-company { font-size:.78rem; opacity:.85; margin-bottom:5px; }
-.card-divider { height:3px; background:var(--primary); width:42px; margin:5px 0; border-radius:3px; }
-.card-contact { font-size:.69rem; display:flex; flex-direction:column; gap:2px; }
-.card-tagline { margin-top:auto; font-size:.66rem; font-style:italic; opacity:.7; }
+.card-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.card-name{ font-family:'Poppins',sans-serif; font-size:1.2rem; font-weight:700; color:var(--primary); }
+.card-title{ font-size:.8rem; font-weight:600; }
+.card-company{ font-size:.78rem; opacity:.85; margin-bottom:5px; }
+.card-divider{ height:3px; background:var(--primary); width:42px; margin:5px 0; border-radius:3px; }
+.card-contact{ font-size:.69rem; display:flex; flex-direction:column; gap:2px; }
+.card-tagline{ margin-top:auto; font-size:.66rem; font-style:italic; opacity:.7; }
+.card.tpl-modern{ flex-direction:row-reverse; background:#f8fafc; }
+.card.tpl-dark{ background:#0f172a; color:#e2e8f0; }
+.card.tpl-dark .card-company,.card.tpl-dark .card-contact{ color:#cbd5e1; }
+.card.tpl-minimal{ border:1px solid #e2e8f0; box-shadow:none; }
+.card.tpl-minimal .card-divider{ background:#cbd5e1; }
+.card.tpl-gradient{ background:linear-gradient(135deg,var(--primary),var(--accent2)); color:#fff; }
+.card.tpl-gradient .card-name{ color:#fff; }
+.card.tpl-gradient .card-divider{ background:#fff; }
 
-/* template variants */
-.card.tpl-modern { flex-direction:row-reverse; background:#f8fafc; }
-.card.tpl-dark { background:#0f172a; color:#e2e8f0; }
-.card.tpl-dark .card-company,.card.tpl-dark .card-contact { color:#cbd5e1; }
-.card.tpl-minimal { border:1px solid #e2e8f0; box-shadow:none; }
-.card.tpl-minimal .card-divider { background:#cbd5e1; }
-.card.tpl-gradient { background:linear-gradient(135deg,var(--primary),var(--accent2)); color:#fff; }
-.card.tpl-gradient .card-name { color:#fff; }
-.card.tpl-gradient .card-divider { background:#fff; }
-
-/* ===== CROP MODAL ===== */
-.modal {
+.modal{
   position:fixed; inset:0; background:rgba(2,6,23,.78);
-  display:none; align-items:center; justify-content:center; padding:16px; z-index:50;
-  backdrop-filter:blur(3px);
+  display:none; align-items:center; justify-content:center; padding:16px; z-index:50; backdrop-filter:blur(3px);
 }
-.modal.open { display:flex; }
-.modal-box {
-  background:#fff; border-radius:18px; padding:22px; width:100%; max-width:480px;
-  box-shadow:0 30px 60px rgba(0,0,0,.5);
-}
-.modal-box h3 { font-family:'Poppins',sans-serif; margin-bottom:14px; }
-.crop-area { width:100%; height:300px; background:#0b1020; border-radius:12px; overflow:hidden; }
-.crop-area img { max-width:100%; display:block; }
-.crop-tools { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
-.crop-actions { display:flex; gap:12px; }
+.modal.open{ display:flex; }
+.modal-box{ background:#fff; border-radius:18px; padding:22px; width:100%; max-width:480px; box-shadow:0 30px 60px rgba(0,0,0,.5); }
+.modal-box h3{ font-family:'Poppins',sans-serif; margin-bottom:14px; }
+.crop-area{ width:100%; height:300px; background:#0b1020; border-radius:12px; overflow:hidden; }
+.crop-area img{ max-width:100%; display:block; }
+.crop-tools{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+.crop-actions{ display:flex; gap:12px; }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 860px) {
-  .layout { grid-template-columns:1fr; }
-  .preview-panel { order:-1; }
-  .card { width:100%; max-width:360px; }
+@media (max-width:860px){
+  .builder{ grid-template-columns:1fr; }
+  .preview-panel{ order:-1; }
+  .card{ width:100%; max-width:360px; }
 }
-@media (max-width: 420px) {
-  .app-header h1 { font-size:1.55rem; }
-  .card { height:auto; min-height:196px; }
-  .crop-area { height:240px; }
+@media (max-width:420px){
+  .card{ height:auto; min-height:196px; }
+  .crop-area{ height:240px; }
 }
 </style>
 </head>
 <body>
-<header class="app-header">
-  <h1>🎨 Business Card <span class="accent">Maker</span></h1>
-  <p class="subtitle">Design a professional card — works great on every device</p>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <a href="index.html" class="nav-brand"><span class="nav-logo">🎨</span> CardCraft</a>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">☰</button>
+  <div class="nav-links" id="nav-links">
+    <a href="index.html">Home</a>
+    <a href="#builder">Builder</a>
+    <a href="#features">Features</a>
+    <a href="blog.html">Guides</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="#builder" class="cta">Create Card</a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <span class="badge">100% Free · No Sign-up · Private</span>
+  <h1>Design a <span class="accent">professional business card</span> in seconds</h1>
+  <p>CardCraft is a free online business card maker. Pick a template, add your photo or logo, customise the colours, and download a print-ready PDF or high-resolution PNG — right from your browser.</p>
+  <div class="hero-cta">
+    <a href="#builder" class="btn primary">🚀 Start Designing</a>
+    <a href="#how" class="btn ghost">See how it works</a>
+  </div>
 </header>
 
-<main class="layout">
-  <!-- ============ FORM PANEL ============ -->
-  <section class="panel form-panel">
-    <h2>Card Details</h2>
+<!-- Ad slot (placeholder; paste your AdSense code inside .ad-inner after approval) -->
+<div class="ad-slot"><div class="ad-inner">Advertisement</div></div>
 
-    <label>Name <input type="text" id="f-name" value="Raj Sharma" placeholder="Your name"></label>
-    <label>Designation <input type="text" id="f-title" value="Founder & CEO" placeholder="e.g. Manager"></label>
-    <label>Company <input type="text" id="f-company" value="Sharma Enterprises" placeholder="Company name"></label>
-    <label>Phone <input type="text" id="f-phone" value="+91 98765 43210" placeholder="Phone number"></label>
-    <label>Email <input type="text" id="f-email" value="raj@sharma.com" placeholder="Email"></label>
-    <label>Website <input type="text" id="f-website" value="www.sharma.com" placeholder="Website"></label>
-    <label>Address <input type="text" id="f-address" value="MG Road, New Delhi" placeholder="Address"></label>
-    <label>Tagline <input type="text" id="f-tagline" value="Quality You Can Trust" placeholder="A short slogan"></label>
+<!-- ============ BUILDER TOOL ============ -->
+<main>
+<section id="builder" class="builder">
+  <!-- FORM PANEL -->
+  <div class="panel form-panel">
+    <h3 class="group">Card Details</h3>
+    <label class="field">Name <input type="text" id="f-name" value="Raj Sharma" placeholder="Your name"></label>
+    <label class="field">Designation <input type="text" id="f-title" value="Founder &amp; CEO" placeholder="e.g. Manager"></label>
+    <label class="field">Company <input type="text" id="f-company" value="Sharma Enterprises" placeholder="Company name"></label>
+    <label class="field">Phone <input type="text" id="f-phone" value="+91 98765 43210" placeholder="Phone number"></label>
+    <label class="field">Email <input type="text" id="f-email" value="raj@sharma.com" placeholder="Email"></label>
+    <label class="field">Website <input type="text" id="f-website" value="www.sharma.com" placeholder="Website"></label>
+    <label class="field">Address <input type="text" id="f-address" value="MG Road, New Delhi" placeholder="Address"></label>
+    <label class="field">Tagline <input type="text" id="f-tagline" value="Quality You Can Trust" placeholder="A short slogan"></label>
 
-    <h2>Photo / Logo</h2>
+    <h3 class="group">Photo / Logo</h3>
     <label class="file-label">
       <span>📷 Choose an image</span>
       <input type="file" id="f-photo" accept="image/*">
     </label>
-    <p class="hint">After choosing an image you can crop and rotate it.</p>
+    <p class="hint">After choosing an image you can crop, zoom and rotate it.</p>
 
-    <h2>Template</h2>
+    <h3 class="group">Template</h3>
     <div class="template-row" id="template-row">
       <button class="tpl-btn active" data-tpl="classic">Classic</button>
       <button class="tpl-btn" data-tpl="modern">Modern</button>
@@ -211,7 +224,7 @@ input[type=text]:focus {
       <button class="tpl-btn" data-tpl="gradient">Gradient</button>
     </div>
 
-    <h2>Colors</h2>
+    <h3 class="group">Colors</h3>
     <div class="color-row">
       <label>Primary <input type="color" id="c-primary" value="#4f46e5"></label>
       <label>Text <input type="color" id="c-text" value="#111827"></label>
@@ -221,20 +234,20 @@ input[type=text]:focus {
       <button id="btn-pdf" class="btn primary">⬇️ Download PDF (HD)</button>
       <button id="btn-png" class="btn">⬇️ Download PNG</button>
     </div>
-  </section>
+  </div>
 
-  <!-- ============ PREVIEW PANEL ============ -->
-  <section class="panel preview-panel">
-    <h2>Live Preview</h2>
+  <!-- PREVIEW PANEL -->
+  <div class="panel preview-panel">
+    <h3 class="group">Live Preview</h3>
     <div class="card-wrap">
       <div id="card" class="card tpl-classic">
         <div class="card-photo-wrap">
           <div id="card-photo-placeholder" class="card-photo-placeholder">👤</div>
-          <img id="card-photo" class="card-photo" alt="" hidden>
+          <img id="card-photo" class="card-photo" alt="Business card photo preview" hidden>
         </div>
         <div class="card-body">
           <div class="card-name" id="o-name">Raj Sharma</div>
-          <div class="card-title" id="o-title">Founder & CEO</div>
+          <div class="card-title" id="o-title">Founder &amp; CEO</div>
           <div class="card-company" id="o-company">Sharma Enterprises</div>
           <div class="card-divider"></div>
           <div class="card-contact">
@@ -248,16 +261,85 @@ input[type=text]:focus {
       </div>
     </div>
     <p class="hint center">Exports at print quality (300+ DPI) — no pixelation.</p>
-  </section>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features" class="section">
+  <div class="section-head">
+    <span class="eyebrow">Why CardCraft</span>
+    <h2>Everything you need to make a great first impression</h2>
+    <p>A focused, no-nonsense tool that helps you produce a polished business card without design software or a steep learning curve.</p>
+  </div>
+  <div class="grid grid-3">
+    <div class="feature"><div class="ico">🎨</div><h3>5 Premium Templates</h3><p>Classic, Modern, Dark, Minimal and Gradient layouts — switch instantly to find the look that fits your brand.</p></div>
+    <div class="feature"><div class="ico">🖼️</div><h3>Built-in Photo Editor</h3><p>Upload a photo or logo, then crop, zoom and rotate it to a perfect circle before it lands on your card.</p></div>
+    <div class="feature"><div class="ico">🎯</div><h3>Custom Colours</h3><p>Pick your own primary and text colours so the card matches your company palette exactly.</p></div>
+    <div class="feature"><div class="ico">🖨️</div><h3>Print-Ready PDF</h3><p>Exports at the standard 89×51&nbsp;mm size with crisp vector text that prints sharp at 300+ DPI.</p></div>
+    <div class="feature"><div class="ico">🔒</div><h3>Private by Design</h3><p>Everything runs in your browser. Your photos and details are never uploaded to any server.</p></div>
+    <div class="feature"><div class="ico">📱</div><h3>Works Everywhere</h3><p>Fully responsive — design comfortably on a phone, tablet or desktop, no app install required.</p></div>
+  </div>
+</section>
+
+<!-- Ad slot -->
+<div class="ad-slot"><div class="ad-inner">Advertisement</div></div>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how" class="section">
+  <div class="section-head">
+    <span class="eyebrow">How it works</span>
+    <h2>From blank card to download in three steps</h2>
+  </div>
+  <div class="grid grid-3 steps">
+    <div class="feature step"><h3>Enter your details</h3><p>Type your name, designation, company and contact information into the form. The preview updates live as you type.</p></div>
+    <div class="feature step"><h3>Style it your way</h3><p>Choose a template, add a photo or logo, and set your brand colours until the card looks just right.</p></div>
+    <div class="feature step"><h3>Download &amp; print</h3><p>Export a high-definition PDF for printing or a PNG for sharing online. That's it — no account needed.</p></div>
+  </div>
+</section>
+
+<!-- ============ CONTENT / BENEFITS ============ -->
+<section class="section">
+  <div class="content-card">
+    <h1>Why a good business card still matters</h1>
+    <p class="lead">In a world of digital contacts and QR codes, a well-designed business card remains one of the most effective networking tools you can carry. It is tangible, memorable, and gives the person you meet something physical to associate with your name.</p>
+    <p>A business card does more than share a phone number. It communicates professionalism, reinforces your brand, and signals that you take your work seriously. When you hand someone a clean, thoughtfully designed card, you are making a small promise about the quality of everything else you do.</p>
+
+    <h2>What makes an effective business card?</h2>
+    <ul>
+      <li><strong>Clarity first.</strong> Your name, role and primary contact method should be readable at a glance. Avoid cramming in every detail.</li>
+      <li><strong>Consistent branding.</strong> Use colours and fonts that match your logo, website and other materials so people recognise you instantly.</li>
+      <li><strong>Breathing room.</strong> Generous white space makes a card feel premium. A cluttered card feels cheap, no matter how nice the content is.</li>
+      <li><strong>One clear focal point.</strong> Usually your name or company. Everything else supports it.</li>
+      <li><strong>Print quality.</strong> A blurry, low-resolution print undoes all your design effort. Always export at 300 DPI or higher.</li>
+    </ul>
+
+    <h2>How CardCraft helps</h2>
+    <p>CardCraft takes care of the technical details so you can focus on the message. The card preview always reflects the standard print proportions, the templates are built with sensible spacing and hierarchy, and the PDF export draws your text as true vector graphics. That means your card stays crisp whether it is viewed on a screen or printed on premium stock.</p>
+    <p>Because the entire tool runs in your browser, there is nothing to install and nothing to sign up for. You can experiment freely, download as many versions as you like, and your information never leaves your device. When you are ready, read our <a href="blog.html">design guides</a> for more tips, or jump straight back to the <a href="#builder">builder</a>.</p>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section">
+  <div class="section-head">
+    <span class="eyebrow">FAQ</span>
+    <h2>Frequently asked questions</h2>
+  </div>
+  <div class="faq">
+    <details open><summary>Is CardCraft really free?</summary><p>Yes. CardCraft is completely free to use. You can design and download as many business cards as you like without creating an account or entering payment details.</p></details>
+    <details><summary>Are my photos and details uploaded anywhere?</summary><p>No. All editing happens directly in your browser. Your image and contact details never leave your device, which keeps your information private and secure.</p></details>
+    <details><summary>What size and quality is the export?</summary><p>The PDF uses the standard business card size of 89&nbsp;×&nbsp;51&nbsp;mm (3.5&nbsp;×&nbsp;2&nbsp;in). Text is rendered as vector graphics so it prints sharply at 300+ DPI. PNG export is high resolution as well.</p></details>
+    <details><summary>Can I add my company logo instead of a photo?</summary><p>Absolutely. The image uploader works for both photos and logos. After uploading, use the built-in editor to crop and position the image.</p></details>
+    <details><summary>Will this work on my phone?</summary><p>Yes. CardCraft is fully responsive and works on phones, tablets and desktops. No app installation is needed.</p></details>
+  </div>
+</section>
 </main>
 
 <!-- ============ CROP MODAL ============ -->
 <div id="crop-modal" class="modal">
   <div class="modal-box">
     <h3>Edit Image</h3>
-    <div class="crop-area">
-      <img id="crop-image" alt="">
-    </div>
+    <div class="crop-area"><img id="crop-image" alt="Image being cropped"></div>
     <div class="crop-tools">
       <button class="btn small" data-act="rot-left">↺ Rotate Left</button>
       <button class="btn small" data-act="rot-right">↻ Rotate Right</button>
@@ -272,231 +354,35 @@ input[type=text]:focus {
   </div>
 </div>
 
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-col footer-about">
+      <a href="index.html" class="nav-brand"><span class="nav-logo">🎨</span> CardCraft</a>
+      <p>A free online business card maker that helps you design clean, professional, print-ready cards in minutes — no software and no sign-up.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#builder">Card Builder</a>
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="blog.html">Design Guides</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company &amp; Legal</h4>
+      <a href="about.html">About Us</a>
+      <a href="contact.html">Contact</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+      <a href="terms.html">Terms &amp; Conditions</a>
+      <a href="disclaimer.html">Disclaimer</a>
+    </div>
+  </div>
+  <div class="footer-bottom">© <span id="year">2026</span> CardCraft. All rights reserved. Made for creators and small businesses.</div>
+</footer>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-(function () {
-  'use strict';
-
-  // ---------- Live preview bindings ----------
-  const map = {
-    'f-name':   { out:'o-name',    prefix:'' },
-    'f-title':  { out:'o-title',   prefix:'' },
-    'f-company':{ out:'o-company', prefix:'' },
-    'f-phone':  { out:'o-phone',   prefix:'\uD83D\uDCDE ' },
-    'f-email':  { out:'o-email',   prefix:'\u2709\uFE0F ' },
-    'f-website':{ out:'o-website', prefix:'\uD83C\uDF10 ' },
-    'f-address':{ out:'o-address', prefix:'\uD83D\uDCCD ' },
-    'f-tagline':{ out:'o-tagline', prefix:'' }
-  };
-  Object.keys(map).forEach(function (id) {
-    const input = document.getElementById(id);
-    input.addEventListener('input', function () {
-      const o = map[id];
-      const el = document.getElementById(o.out);
-      el.textContent = input.value ? o.prefix + input.value : '';
-    });
-  });
-
-  // ---------- Templates ----------
-  const card = document.getElementById('card');
-  document.getElementById('template-row').addEventListener('click', function (e) {
-    const btn = e.target.closest('.tpl-btn');
-    if (!btn) return;
-    document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    card.className = 'card tpl-' + btn.dataset.tpl;
-  });
-
-  // ---------- Colors ----------
-  document.getElementById('c-primary').addEventListener('input', function () {
-    card.style.setProperty('--primary', this.value);
-  });
-  document.getElementById('c-text').addEventListener('input', function () {
-    card.style.setProperty('--text', this.value);
-  });
-
-  // ---------- Image upload + Cropper ----------
-  const photoInput = document.getElementById('f-photo');
-  const cropModal  = document.getElementById('crop-modal');
-  const cropImage  = document.getElementById('crop-image');
-  const cardPhoto  = document.getElementById('card-photo');
-  let cropper = null;
-  let photoDataUrl = null; // cropped photo kept for sharp PDF export
-
-  photoInput.addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (ev) {
-      cropImage.src = ev.target.result;
-      openCrop();
-    };
-    reader.readAsDataURL(file);
-    photoInput.value = '';
-  });
-
-  function openCrop() {
-    cropModal.classList.add('open');
-    if (cropper) cropper.destroy();
-    cropper = new Cropper(cropImage, {
-      aspectRatio: 1,
-      viewMode: 1,
-      autoCropArea: 1
-    });
-  }
-
-  function closeCrop() {
-    cropModal.classList.remove('open');
-    if (cropper) { cropper.destroy(); cropper = null; }
-  }
-
-  document.querySelector('.crop-tools').addEventListener('click', function (e) {
-    const btn = e.target.closest('button');
-    if (!btn || !cropper) return;
-    switch (btn.dataset.act) {
-      case 'rot-left':  cropper.rotate(-90); break;
-      case 'rot-right': cropper.rotate(90); break;
-      case 'zoom-in':   cropper.zoom(0.1); break;
-      case 'zoom-out':  cropper.zoom(-0.1); break;
-      case 'reset':     cropper.reset(); break;
-    }
-  });
-
-  document.getElementById('crop-cancel').addEventListener('click', closeCrop);
-  document.getElementById('crop-apply').addEventListener('click', function () {
-    if (!cropper) return;
-    // High-resolution output so the photo stays sharp in PDF
-    const canvas = cropper.getCroppedCanvas({
-      width: 512, height: 512,
-      imageSmoothingEnabled: true, imageSmoothingQuality: 'high'
-    });
-    photoDataUrl = canvas.toDataURL('image/png');
-    cardPhoto.src = photoDataUrl;
-    cardPhoto.hidden = false;
-    var ph = document.getElementById('card-photo-placeholder');
-    if (ph) ph.style.display = 'none';
-    closeCrop();
-  });
-
-  // close modal when clicking the dark backdrop
-  cropModal.addEventListener('click', function (e) {
-    if (e.target === cropModal) closeCrop();
-  });
-
-  // ---------- High quality render ----------
-  function renderCanvas() {
-    return html2canvas(card, {
-      scale: 4,                 // 4x for crisp, print-quality output
-      useCORS: true,
-      backgroundColor: null,
-      logging: false
-    });
-  }
-
-  // ---------- helpers ----------
-  function val(id) { return (document.getElementById(id).value || '').trim(); }
-  function hexToRgb(hex) {
-    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
-    return m ? [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)] : [17,24,39];
-  }
-  function activeTpl() {
-    const b = document.querySelector('.tpl-btn.active');
-    return b ? b.dataset.tpl : 'classic';
-  }
-
-  // ---------- PDF download (VECTOR text = never pixelates) ----------
-  // Text and shapes are drawn natively by jsPDF (true vector), so they stay
-  // perfectly sharp at any zoom or print size. Only the photo is a raster
-  // image, and it is high resolution (512x512).
-  document.getElementById('btn-pdf').addEventListener('click', function () {
-    const { jsPDF } = window.jspdf;
-    // Standard business card: 3.5in x 2in => 89mm x 51mm
-    const W = 89, H = 51;
-    const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[W, H] });
-
-    const tpl = activeTpl();
-    const primary = hexToRgb(val('c-primary'));
-    let textRgb = hexToRgb(val('c-text'));
-    let bg = [255,255,255];
-    let photoOnRight = true;
-
-    if (tpl === 'dark')     { bg = [15,23,42];  textRgb = [226,232,240]; }
-    if (tpl === 'minimal')  { bg = [255,255,255]; }
-    if (tpl === 'modern')   { bg = [248,250,252]; }
-    let gradient = (tpl === 'gradient');
-
-    // Background
-    if (gradient) { pdf.setFillColor(primary[0],primary[1],primary[2]); textRgb = [255,255,255]; }
-    else { pdf.setFillColor(bg[0],bg[1],bg[2]); }
-    pdf.rect(0, 0, W, H, 'F');
-
-    // Photo (right side), high-res raster
-    const photoSize = 22, margin = 7;
-    let textX = margin;
-    if (photoDataUrl) {
-      const px = W - margin - photoSize;
-      const py = (H - photoSize) / 2;
-      pdf.addImage(photoDataUrl, 'PNG', px, py, photoSize, photoSize, undefined, 'SLOW');
-    }
-
-    // Name
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    if (gradient) pdf.setTextColor(255,255,255);
-    else pdf.setTextColor(primary[0],primary[1],primary[2]);
-    let y = margin + 4;
-    pdf.text(val('f-name') || ' ', textX, y);
-
-    // Designation
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    pdf.setTextColor(textRgb[0],textRgb[1],textRgb[2]);
-    y += 4.5; pdf.text(val('f-title') || ' ', textX, y);
-
-    // Company
-    pdf.setFontSize(7.5);
-    y += 4; pdf.text(val('f-company') || ' ', textX, y);
-
-    // Divider line (vector)
-    y += 2.5;
-    pdf.setDrawColor(primary[0],primary[1],primary[2]);
-    pdf.setLineWidth(0.6);
-    pdf.line(textX, y, textX + 12, y);
-
-    // Contact lines
-    pdf.setFontSize(6.8);
-    pdf.setTextColor(textRgb[0],textRgb[1],textRgb[2]);
-    const lines = [
-      val('f-phone')   ? 'Phone: '  + val('f-phone')   : '',
-      val('f-email')   ? 'Email: '  + val('f-email')   : '',
-      val('f-website') ? 'Web: '    + val('f-website') : '',
-      val('f-address') ? 'Address: '+ val('f-address') : ''
-    ].filter(Boolean);
-    y += 4;
-    lines.forEach(function (ln) { pdf.text(ln, textX, y); y += 3.4; });
-
-    // Tagline
-    if (val('f-tagline')) {
-      pdf.setFont('helvetica', 'italic');
-      pdf.setFontSize(6.5);
-      pdf.text(val('f-tagline'), textX, H - margin);
-    }
-
-    pdf.save('business-card.pdf');
-  });
-
-  // ---------- PNG download (high resolution) ----------
-  document.getElementById('btn-png').addEventListener('click', function () {
-    renderCanvas().then(function (canvas) {
-      const link = document.createElement('a');
-      link.download = 'business-card.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
-    });
-  });
-})();
-</script>
+<script src="assets/app.js" defer></script>
 </body>
 </html>

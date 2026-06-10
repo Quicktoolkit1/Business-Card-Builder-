@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://quicktoolkit1.github.io/Business-Card-Builder-/sitemap.xml

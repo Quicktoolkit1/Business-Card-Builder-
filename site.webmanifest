@@ -1,0 +1,18 @@
+{
+  "name": "CardCraft — Business Card Maker",
+  "short_name": "CardCraft",
+  "description": "Free online business card maker. Design and download print-ready cards.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
