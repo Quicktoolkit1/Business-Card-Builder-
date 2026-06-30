@@ -143,36 +143,38 @@
   // (selectable, copyable) vector text as an icon in the PDF.
   function emojiDataUrl(emoji) {
     var c = document.createElement('canvas');
-    c.width = c.height = 72;
+    c.width = c.height = 128;
     var ctx = c.getContext('2d');
-    ctx.font = '56px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    ctx.font = '100px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(emoji, 36, 40);
+    ctx.fillText(emoji, 64, 70);
     return c.toDataURL('image/png');
   }
 
-  // Clip the uploaded square photo into a circle with a coloured ring,
-  // matching the on-screen preview.
-  function makeCircularPhoto(dataUrl, ringHex) {
+  // Clip the uploaded square photo into a high-resolution circle with a
+  // smoothly ANTI-ALIASED edge (using a "destination-in" composite instead of
+  // clip(), which would leave a jagged edge). The coloured border is NOT baked
+  // here — it is drawn in the PDF as a true vector circle (see build()), so it
+  // can never pixelate at any zoom or print resolution.
+  function makeCircularPhoto(dataUrl) {
     return new Promise(function (resolve) {
       var img = new Image();
       img.onload = function () {
-        var s = 2048, c = document.createElement('canvas');
+        var s = Math.min(1400, Math.max(img.naturalWidth || 0, 900));
+        var c = document.createElement('canvas');
         c.width = c.height = s;
         var ctx = c.getContext('2d');
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(s / 2, s / 2, s / 2 - 64, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.clearRect(0, 0, s, s);
         ctx.drawImage(img, 0, 0, s, s);
-        ctx.restore();
-        ctx.lineWidth = 96;
-        ctx.strokeStyle = ringHex || '#4f46e5';
+        ctx.globalCompositeOperation = 'destination-in';
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, s / 2 - 52, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
         resolve(c.toDataURL('image/png'));
       };
       img.onerror = function () { resolve(null); };
@@ -193,7 +195,6 @@
     var accent2 = [147, 51, 234];
     var bg = [255, 255, 255];
     var gradient = (tpl === 'gradient');
-    var ringHex = val('c-primary') || '#4f46e5';
 
     if (tpl === 'dark')   { bg = [15, 23, 42];  textRgb = [226, 232, 240]; }
     if (tpl === 'modern') { bg = [248, 250, 252]; }
@@ -224,7 +225,15 @@
       if (circPhoto) {
         var px = W - margin - photoSize;
         var py = (H - photoSize) / 2 - 2.5;
-        pdf.addImage(circPhoto, 'PNG', px, py, photoSize, photoSize, undefined, 'SLOW');
+        // Photo embedded losslessly ('NONE') for full quality.
+        pdf.addImage(circPhoto, 'PNG', px, py, photoSize, photoSize, undefined, 'NONE');
+        // Border as a TRUE VECTOR circle on top of the photo edge. Vector
+        // strokes are resolution independent, so the border is razor-sharp at
+        // any zoom and when printed — it never pixelates. It sits on the
+        // photo's edge and hides the raster edge, so there are no jaggies.
+        pdf.setDrawColor(primary[0], primary[1], primary[2]);
+        pdf.setLineWidth(1.1);
+        pdf.circle(px + photoSize / 2, py + photoSize / 2, photoSize / 2, 'S');
       }
 
       var x = margin, y = 14;
@@ -279,7 +288,7 @@
     }
 
     try {
-      if (photoDataUrl) { makeCircularPhoto(photoDataUrl, ringHex).then(build); }
+      if (photoDataUrl) { makeCircularPhoto(photoDataUrl).then(build); }
       else { build(null); }
     } catch (e) {
       alert('Could not generate the PDF. Please try again.');
