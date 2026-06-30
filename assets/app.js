@@ -146,30 +146,50 @@
     return el ? el.value.trim() : '';
   }
 
-  // Turn the (square) cropped photo into a transparent circular PNG so it can
-  // be dropped into the PDF as a real round image, just like the preview.
-  // We render at high resolution and use a "destination-in" composite (instead
-  // of clip()) so the circular edge is smoothly anti-aliased — no jagged,
-  // pixelated border.
-  function makeCircular(dataUrl, cb) {
+  // Turn the (square) cropped photo into a transparent circular PNG with the
+  // colored border baked straight into the same high-resolution canvas. Doing
+  // both in one pass (instead of a separate PDF vector ring) guarantees the
+  // photo edge and the border are perfectly aligned and smoothly anti-aliased,
+  // so the border never looks jagged or pixelated.
+  function makeCircular(dataUrl, borderHex, cb) {
     var img = new Image();
     img.onload = function () {
-      var s = Math.min(1024, Math.max(img.naturalWidth || 0, 600));
+      // Render large for a crisp result (well above 300 DPI at print size).
+      var s = Math.min(1400, Math.max(img.naturalWidth || 0, 900));
       var c = document.createElement('canvas');
       c.width = s; c.height = s;
       var ctx = c.getContext('2d');
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.clearRect(0, 0, s, s);
-      // Draw the photo to fill the square first.
-      ctx.drawImage(img, 0, 0, s, s);
-      // Keep only the pixels inside the (anti-aliased) circle.
+
+      var cx = s / 2, cy = s / 2;
+      var pad = Math.max(2, Math.round(s * 0.004));       // keep AA off the canvas edge
+      var bw = Math.max(6, Math.round(s * 0.05));          // border thickness (~5%)
+      var rOuter = s / 2 - pad;                            // outer edge of the border
+      var overlap = Math.max(2, Math.round(s * 0.006));    // photo tucks under the ring
+      var rPhoto = rOuter - bw + overlap;                  // photo radius
+
+      // 1) Draw the photo filling the photo circle, then mask it with an
+      //    anti-aliased circle via destination-in (smooth edge).
+      var dia = rPhoto * 2;
+      ctx.drawImage(img, cx - rPhoto, cy - rPhoto, dia, dia);
       ctx.globalCompositeOperation = 'destination-in';
       ctx.beginPath();
-      ctx.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
+      ctx.arc(cx, cy, rPhoto, 0, Math.PI * 2);
       ctx.closePath();
       ctx.fill();
       ctx.globalCompositeOperation = 'source-over';
+
+      // 2) Stroke the border ring on top. stroke() is anti-aliased, and it
+      //    overlaps the photo edge so there is no seam.
+      ctx.lineWidth = bw;
+      ctx.strokeStyle = borderHex || '#4f46e5';
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter - bw / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.stroke();
+
       cb(c.toDataURL('image/png'));
     };
     img.onerror = function () { cb(null); };
@@ -198,7 +218,8 @@
   // circular image to match the live preview.
   document.getElementById('btn-pdf').addEventListener('click', function () {
     if (photoDataUrl) {
-      makeCircular(photoDataUrl, function (circ) { buildPdf(circ); });
+      var borderHex = document.getElementById('c-primary').value;
+      makeCircular(photoDataUrl, borderHex, function (circ) { buildPdf(circ); });
     } else {
       buildPdf(null);
     }
@@ -258,13 +279,9 @@
       var d = 24, pLeft = W - 6 - d, pTop = 6, pcx = pLeft + d / 2, pcy = pTop + d / 2;
       var hasPhoto = !!photoImg;
       if (hasPhoto) {
-        // 'NONE' compression keeps the embedded photo at full quality (no
-        // lossy down-sampling). The ring is drawn as a crisp vector circle.
+        // The photo already includes its anti-aliased circular border baked in
+        // at high resolution. 'NONE' compression keeps it lossless and crisp.
         pdf.addImage(photoImg, 'PNG', pLeft, pTop, d, d, undefined, 'NONE');
-        var pr = hexToRgb(primaryHex);
-        pdf.setDrawColor(pr.r, pr.g, pr.b);
-        pdf.setLineWidth(0.8);
-        pdf.circle(pcx, pcy, d / 2, 'S');
       }
 
       // ----- Text body (left) -----
