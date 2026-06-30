@@ -110,8 +110,10 @@
   document.getElementById('crop-cancel').addEventListener('click', closeCrop);
   document.getElementById('crop-apply').addEventListener('click', function () {
     if (!cropper) return;
+    // Capture the crop at high resolution so the photo stays sharp in the
+    // exported PDF (and on high-DPI / retina screens).
     var canvas = cropper.getCroppedCanvas({
-      width: 512, height: 512,
+      maxWidth: 1600, maxHeight: 1600,
       imageSmoothingEnabled: true, imageSmoothingQuality: 'high'
     });
     photoDataUrl = canvas.toDataURL('image/png');
