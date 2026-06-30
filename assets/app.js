@@ -128,217 +128,161 @@
     if (e.target === cropModal) closeCrop();
   });
 
-  // ---------- Helpers ----------
+  // ---------- helpers ----------
+  function val(id) { return (document.getElementById(id).value || '').trim(); }
   function hexToRgb(hex) {
-    hex = String(hex || '').replace('#', '');
-    if (hex.length === 3) {
-      hex = hex.split('').map(function (c) { return c + c; }).join('');
-    }
-    return {
-      r: parseInt(hex.substr(0, 2), 16) || 0,
-      g: parseInt(hex.substr(2, 2), 16) || 0,
-      b: parseInt(hex.substr(4, 2), 16) || 0
-    };
+    var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+    return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [17, 24, 39];
+  }
+  function activeTpl() {
+    var b = document.querySelector('.tpl-btn.active');
+    return b ? b.dataset.tpl : 'classic';
   }
 
-  function fieldValue(id) {
-    var el = document.getElementById(id);
-    return el ? el.value.trim() : '';
+  // Render an emoji to a small transparent PNG so it can sit next to the
+  // (selectable, copyable) vector text as an icon in the PDF.
+  function emojiDataUrl(emoji) {
+    var c = document.createElement('canvas');
+    c.width = c.height = 72;
+    var ctx = c.getContext('2d');
+    ctx.font = '56px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, 36, 40);
+    return c.toDataURL('image/png');
   }
 
-  // Turn the (square) cropped photo into a transparent, high-resolution
-  // circular PNG. We deliberately do NOT bake the border here — the border is
-  // drawn in the PDF as a true VECTOR circle (see buildPdf), which stays
-  // perfectly smooth at any zoom or print resolution and never pixelates.
-  // A "destination-in" composite gives the photo a smoothly anti-aliased edge,
-  // and that edge is then tucked underneath the vector ring so no jaggies show.
-  function makeCircular(dataUrl, cb) {
-    var img = new Image();
-    img.onload = function () {
-      var s = Math.min(1400, Math.max(img.naturalWidth || 0, 900));
-      var c = document.createElement('canvas');
-      c.width = s; c.height = s;
-      var ctx = c.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.clearRect(0, 0, s, s);
-      // Fill the whole square with the photo, then keep only the circle.
-      ctx.drawImage(img, 0, 0, s, s);
-      ctx.globalCompositeOperation = 'destination-in';
-      ctx.beginPath();
-      ctx.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalCompositeOperation = 'source-over';
-      cb(c.toDataURL('image/png'));
-    };
-    img.onerror = function () { cb(null); };
-    img.src = dataUrl;
+  // Clip the uploaded square photo into a circle with a coloured ring,
+  // matching the on-screen preview.
+  function makeCircularPhoto(dataUrl, ringHex) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () {
+        var s = 512, c = document.createElement('canvas');
+        c.width = c.height = s;
+        var ctx = c.getContext('2d');
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, s / 2 - 16, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, 0, 0, s, s);
+        ctx.restore();
+        ctx.lineWidth = 24;
+        ctx.strokeStyle = ringHex || '#4f46e5';
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, s / 2 - 13, 0, Math.PI * 2);
+        ctx.stroke();
+        resolve(c.toDataURL('image/png'));
+      };
+      img.onerror = function () { resolve(null); };
+      img.src = dataUrl;
+    });
   }
 
-  // Smooth horizontal gradient drawn as thin strips (used by the Gradient template).
-  function drawGradient(pdf, x, y, w, h, hex1, hex2) {
-    var c1 = hexToRgb(hex1), c2 = hexToRgb(hex2);
-    var steps = 140, sw = w / steps;
-    for (var i = 0; i < steps; i++) {
-      var t = i / (steps - 1);
-      pdf.setFillColor(
-        Math.round(c1.r + (c2.r - c1.r) * t),
-        Math.round(c1.g + (c2.g - c1.g) * t),
-        Math.round(c1.b + (c2.b - c1.b) * t)
-      );
-      pdf.rect(x + i * sw, y, sw + 0.4, h, 'F');
-    }
-  }
-
-  // ---------- PDF download (true vector text — fully selectable & copyable) ----------
-  // Instead of flattening the card to an image, every line is written with
-  // pdf.text() so the exported PDF stays razor-sharp at any zoom and the text
-  // can be selected, copied and searched. The photo is embedded as a crisp
-  // circular image to match the live preview.
+  // ---------- PDF download (HD, with SELECTABLE/COPYABLE vector text) ----------
+  // Text (name, details, tagline) is drawn natively by jsPDF so it can be
+  // selected and copied. The photo is a circular image and the contact icons
+  // are tiny emoji images, so the result still looks like the live preview.
   document.getElementById('btn-pdf').addEventListener('click', function () {
-    if (photoDataUrl) {
-      makeCircular(photoDataUrl, function (circ) { buildPdf(circ); });
-    } else {
-      buildPdf(null);
-    }
-  });
+    var jsPDF = window.jspdf.jsPDF;
+    var W = 89, H = 51, margin = 7;
+    var tpl = activeTpl();
+    var primary = hexToRgb(val('c-primary'));
+    var textRgb = hexToRgb(val('c-text'));
+    var accent2 = [147, 51, 234];
+    var bg = [255, 255, 255];
+    var gradient = (tpl === 'gradient');
+    var ringHex = val('c-primary') || '#4f46e5';
 
-  function buildPdf(photoImg) {
-    try {
-      var jsPDF = window.jspdf.jsPDF;
-      var W = 89, H = 51; // standard business-card size in mm (89 x 51)
+    if (tpl === 'dark')   { bg = [15, 23, 42];  textRgb = [226, 232, 240]; }
+    if (tpl === 'modern') { bg = [248, 250, 252]; }
+
+    function build(circPhoto) {
       var pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [W, H] });
 
-      var tplMatch = card.className.match(/tpl-(\w+)/);
-      var tpl = tplMatch ? tplMatch[1] : 'classic';
-      var primaryHex = document.getElementById('c-primary').value;
-      var textHex = document.getElementById('c-text').value;
-
-      // Theme colours per template (mirrors the on-screen styles).
-      var bg, nameColor, bodyColor, mutedColor, dividerColor, isGradient = false;
-      switch (tpl) {
-        case 'dark':
-          bg = '#0f172a'; nameColor = primaryHex; bodyColor = '#e2e8f0';
-          mutedColor = '#cbd5e1'; dividerColor = primaryHex; break;
-        case 'modern':
-          bg = '#f8fafc'; nameColor = primaryHex; bodyColor = textHex;
-          mutedColor = textHex; dividerColor = primaryHex; break;
-        case 'minimal':
-          bg = '#ffffff'; nameColor = primaryHex; bodyColor = textHex;
-          mutedColor = textHex; dividerColor = '#cbd5e1'; break;
-        case 'gradient':
-          isGradient = true; nameColor = '#ffffff'; bodyColor = '#ffffff';
-          mutedColor = '#ffffff'; dividerColor = '#ffffff'; break;
-        default: // classic
-          bg = '#ffffff'; nameColor = primaryHex; bodyColor = textHex;
-          mutedColor = textHex; dividerColor = primaryHex;
-      }
-
-      // Background.
-      if (isGradient) {
-        drawGradient(pdf, 0, 0, W, H, primaryHex, '#9333ea');
+      // Background
+      if (gradient) {
+        var steps = 64;
+        for (var i = 0; i < steps; i++) {
+          var t = i / (steps - 1);
+          pdf.setFillColor(
+            Math.round(primary[0] + (accent2[0] - primary[0]) * t),
+            Math.round(primary[1] + (accent2[1] - primary[1]) * t),
+            Math.round(primary[2] + (accent2[2] - primary[2]) * t)
+          );
+          pdf.rect(i * W / steps, 0, W / steps + 0.6, H, 'F');
+        }
+        textRgb = [255, 255, 255];
       } else {
-        var b = hexToRgb(bg);
-        pdf.setFillColor(b.r, b.g, b.b);
+        pdf.setFillColor(bg[0], bg[1], bg[2]);
         pdf.rect(0, 0, W, H, 'F');
       }
-      if (tpl === 'minimal') {
-        pdf.setDrawColor(226, 232, 240);
-        pdf.setLineWidth(0.3);
-        pdf.rect(1, 1, W - 2, H - 2, 'S');
+
+      // Circular photo on the right, slightly above centre
+      var photoSize = 24;
+      if (circPhoto) {
+        var px = W - margin - photoSize;
+        var py = (H - photoSize) / 2 - 2.5;
+        pdf.addImage(circPhoto, 'PNG', px, py, photoSize, photoSize, undefined, 'SLOW');
       }
 
-      var setText = function (hex) {
-        var c = hexToRgb(hex);
-        pdf.setTextColor(c.r, c.g, c.b);
-      };
+      var x = margin, y = 14;
 
-      // ----- Photo (circular, right side) -----
-      var d = 24, pLeft = W - 6 - d, pTop = 6, pcx = pLeft + d / 2, pcy = pTop + d / 2;
-      var hasPhoto = !!photoImg;
-      if (hasPhoto) {
-        // Photo first (lossless, no down-sampling).
-        pdf.addImage(photoImg, 'PNG', pLeft, pTop, d, d, undefined, 'NONE');
-        // Border as a TRUE VECTOR ring on top. Vector strokes are resolution
-        // independent, so the border is razor-sharp at any zoom and when
-        // printed — it can never pixelate. The ring is centered on the photo's
-        // edge and is thick enough to hide the photo's raster edge, leaving
-        // only the smooth vector outline visible (no seam, no jaggies).
-        var pr = hexToRgb(primaryHex);
-        pdf.setDrawColor(pr.r, pr.g, pr.b);
-        pdf.setLineWidth(1.1);
-        pdf.circle(pcx, pcy, d / 2, 'S');
-      }
+      // Name
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(16);
+      pdf.setTextColor(gradient ? 255 : primary[0], gradient ? 255 : primary[1], gradient ? 255 : primary[2]);
+      if (val('f-name')) pdf.text(val('f-name'), x, y);
 
-      // ----- Text body (left) -----
-      var x = 6;
-      var bodyRight = hasPhoto ? (pLeft - 4) : (W - 6);
-      var bodyW = bodyRight - x;
-      var y = 13;
-
-      var name = fieldValue('f-name');
-      if (name) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(15);
-        setText(nameColor);
-        var nl = pdf.splitTextToSize(name, bodyW);
-        pdf.text(nl, x, y);
-        y += nl.length * 5.6;
-      }
-
-      var title = fieldValue('f-title');
-      if (title) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(8.5);
-        setText(bodyColor);
-        pdf.text(pdf.splitTextToSize(title, bodyW), x, y);
-        y += 4;
-      }
-
-      var company = fieldValue('f-company');
-      if (company) {
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(8);
-        setText(mutedColor);
-        pdf.text(pdf.splitTextToSize(company, bodyW), x, y);
-        y += 3.6;
-      }
-
-      // Divider.
-      y += 1.6;
-      var dc = hexToRgb(dividerColor);
-      pdf.setFillColor(dc.r, dc.g, dc.b);
-      pdf.rect(x, y, 12, 0.9, 'F');
-      y += 4.8;
-
-      // Contacts with small bullet markers.
-      var contacts = ['f-phone', 'f-email', 'f-website', 'f-address']
-        .map(fieldValue).filter(Boolean);
+      // Designation
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(7.5);
-      contacts.forEach(function (line) {
-        pdf.setFillColor(dc.r, dc.g, dc.b);
-        pdf.circle(x + 0.7, y - 0.8, 0.6, 'F');
-        setText(bodyColor);
-        var cl = pdf.splitTextToSize(line, bodyW - 3);
-        pdf.text(cl, x + 3, y);
-        y += cl.length * 3.5;
+      pdf.setTextColor(textRgb[0], textRgb[1], textRgb[2]);
+      pdf.setFontSize(9);
+      if (val('f-title')) { y += 5; pdf.text(val('f-title'), x, y); }
+
+      // Company
+      pdf.setFontSize(8);
+      if (val('f-company')) { y += 4.4; pdf.text(val('f-company'), x, y); }
+
+      // Divider
+      y += 2.4;
+      pdf.setDrawColor(gradient ? 255 : primary[0], gradient ? 255 : primary[1], gradient ? 255 : primary[2]);
+      pdf.setLineWidth(0.7);
+      pdf.line(x, y, x + 13, y);
+
+      // Contact rows: emoji icon image + selectable text
+      pdf.setFontSize(8);
+      pdf.setTextColor(textRgb[0], textRgb[1], textRgb[2]);
+      var rows = [
+        { icon: '\uD83D\uDCDE', text: val('f-phone') },
+        { icon: '\u2709\uFE0F', text: val('f-email') },
+        { icon: '\uD83C\uDF10', text: val('f-website') },
+        { icon: '\uD83D\uDCCD', text: val('f-address') }
+      ].filter(function (r) { return r.text; });
+
+      y += 4.2;
+      rows.forEach(function (r) {
+        try { pdf.addImage(emojiDataUrl(r.icon), 'PNG', x, y - 3.1, 3.4, 3.4); } catch (e) {}
+        pdf.text(r.text, x + 4.7, y);
+        y += 4.3;
       });
 
-      // Tagline anchored near the bottom.
-      var tagline = fieldValue('f-tagline');
-      if (tagline) {
+      // Tagline
+      if (val('f-tagline')) {
         pdf.setFont('helvetica', 'italic');
         pdf.setFontSize(7);
-        setText(mutedColor);
-        var tl = pdf.splitTextToSize(tagline, W - 12);
-        pdf.text(tl, x, H - 4 - (tl.length - 1) * 3);
+        pdf.text(val('f-tagline'), x, H - 3.5);
       }
 
       pdf.save('business-card.pdf');
+    }
+
+    try {
+      if (photoDataUrl) { makeCircularPhoto(photoDataUrl, ringHex).then(build); }
+      else { build(null); }
     } catch (e) {
       alert('Could not generate the PDF. Please try again.');
     }
-  }
+  });
 })();
