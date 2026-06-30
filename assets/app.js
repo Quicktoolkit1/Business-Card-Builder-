@@ -158,7 +158,7 @@
     return new Promise(function (resolve) {
       var img = new Image();
       img.onload = function () {
-        var s = 512, c = document.createElement('canvas');
+        var s = 2048, c = document.createElement('canvas');
         c.width = c.height = s;
         var ctx = c.getContext('2d');
         ctx.save();
