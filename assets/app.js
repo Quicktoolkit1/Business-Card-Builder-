@@ -146,15 +146,15 @@
     return el ? el.value.trim() : '';
   }
 
-  // Turn the (square) cropped photo into a transparent circular PNG with the
-  // colored border baked straight into the same high-resolution canvas. Doing
-  // both in one pass (instead of a separate PDF vector ring) guarantees the
-  // photo edge and the border are perfectly aligned and smoothly anti-aliased,
-  // so the border never looks jagged or pixelated.
-  function makeCircular(dataUrl, borderHex, cb) {
+  // Turn the (square) cropped photo into a transparent, high-resolution
+  // circular PNG. We deliberately do NOT bake the border here — the border is
+  // drawn in the PDF as a true VECTOR circle (see buildPdf), which stays
+  // perfectly smooth at any zoom or print resolution and never pixelates.
+  // A "destination-in" composite gives the photo a smoothly anti-aliased edge,
+  // and that edge is then tucked underneath the vector ring so no jaggies show.
+  function makeCircular(dataUrl, cb) {
     var img = new Image();
     img.onload = function () {
-      // Render large for a crisp result (well above 300 DPI at print size).
       var s = Math.min(1400, Math.max(img.naturalWidth || 0, 900));
       var c = document.createElement('canvas');
       c.width = s; c.height = s;
@@ -162,34 +162,14 @@
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.clearRect(0, 0, s, s);
-
-      var cx = s / 2, cy = s / 2;
-      var pad = Math.max(2, Math.round(s * 0.004));       // keep AA off the canvas edge
-      var bw = Math.max(6, Math.round(s * 0.05));          // border thickness (~5%)
-      var rOuter = s / 2 - pad;                            // outer edge of the border
-      var overlap = Math.max(2, Math.round(s * 0.006));    // photo tucks under the ring
-      var rPhoto = rOuter - bw + overlap;                  // photo radius
-
-      // 1) Draw the photo filling the photo circle, then mask it with an
-      //    anti-aliased circle via destination-in (smooth edge).
-      var dia = rPhoto * 2;
-      ctx.drawImage(img, cx - rPhoto, cy - rPhoto, dia, dia);
+      // Fill the whole square with the photo, then keep only the circle.
+      ctx.drawImage(img, 0, 0, s, s);
       ctx.globalCompositeOperation = 'destination-in';
       ctx.beginPath();
-      ctx.arc(cx, cy, rPhoto, 0, Math.PI * 2);
+      ctx.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
       ctx.closePath();
       ctx.fill();
       ctx.globalCompositeOperation = 'source-over';
-
-      // 2) Stroke the border ring on top. stroke() is anti-aliased, and it
-      //    overlaps the photo edge so there is no seam.
-      ctx.lineWidth = bw;
-      ctx.strokeStyle = borderHex || '#4f46e5';
-      ctx.beginPath();
-      ctx.arc(cx, cy, rOuter - bw / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.stroke();
-
       cb(c.toDataURL('image/png'));
     };
     img.onerror = function () { cb(null); };
@@ -218,8 +198,7 @@
   // circular image to match the live preview.
   document.getElementById('btn-pdf').addEventListener('click', function () {
     if (photoDataUrl) {
-      var borderHex = document.getElementById('c-primary').value;
-      makeCircular(photoDataUrl, borderHex, function (circ) { buildPdf(circ); });
+      makeCircular(photoDataUrl, function (circ) { buildPdf(circ); });
     } else {
       buildPdf(null);
     }
@@ -279,9 +258,17 @@
       var d = 24, pLeft = W - 6 - d, pTop = 6, pcx = pLeft + d / 2, pcy = pTop + d / 2;
       var hasPhoto = !!photoImg;
       if (hasPhoto) {
-        // The photo already includes its anti-aliased circular border baked in
-        // at high resolution. 'NONE' compression keeps it lossless and crisp.
+        // Photo first (lossless, no down-sampling).
         pdf.addImage(photoImg, 'PNG', pLeft, pTop, d, d, undefined, 'NONE');
+        // Border as a TRUE VECTOR ring on top. Vector strokes are resolution
+        // independent, so the border is razor-sharp at any zoom and when
+        // printed — it can never pixelate. The ring is centered on the photo's
+        // edge and is thick enough to hide the photo's raster edge, leaving
+        // only the smooth vector outline visible (no seam, no jaggies).
+        var pr = hexToRgb(primaryHex);
+        pdf.setDrawColor(pr.r, pr.g, pr.b);
+        pdf.setLineWidth(1.1);
+        pdf.circle(pcx, pcy, d / 2, 'S');
       }
 
       // ----- Text body (left) -----
