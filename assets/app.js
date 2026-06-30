@@ -163,15 +163,15 @@
         var ctx = c.getContext('2d');
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, s / 2 - 16, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, s / 2 - 64, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
         ctx.drawImage(img, 0, 0, s, s);
         ctx.restore();
-        ctx.lineWidth = 24;
+        ctx.lineWidth = 96;
         ctx.strokeStyle = ringHex || '#4f46e5';
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, s / 2 - 13, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, s / 2 - 52, 0, Math.PI * 2);
         ctx.stroke();
         resolve(c.toDataURL('image/png'));
       };
